@@ -1,1132 +1,588 @@
-# CareerFit — Founder Mode Roadmap
+# 13 — Development Roadmap (v3)
 
-> **엔진이 전부다. 프론트는 나중이다.**
+> **현재 상태:** `docs/00`~`12` (13개 중 문서 12개) 작성 완료.  
+> Job Family **10개** (HR/Marketing/Data/Product/Operations/Sales/Design/Finance/Engineering/Customer Success),  
+> weight 자동 배분(UNIQUE 65% / COMMON 35%, `06_SCORING_RULES.md` §2) 구조 확정.
 >
-> 성공 배분: Engine 60% / Backend 20% / Frontend 20%
+> 이 로드맵은 **Week 1 잔여 작업(Day 6~7) + Week 2 + Week 3**를 다룬다.  
+> Day 1~5에 해당하는 작업(Vision/PRD/Payload/Schema/ERD/Scoring/Taxonomy/Evidence)은 이미 완료되었다.
 
 ---
 
-## 전체 파이프라인
+## 전체 요약
 
 ```
-Career Intake (사용자 입력)
-        ↓
-Input Normalizer (정제)
-        ↓
-Skill Tagger (스킬 태깅)
-        ↓
-Evidence Extractor (근거 추출)
-        ↓
-Requirement Matcher (요구사항 매칭)
-        ↓
-Scoring Engine (점수 계산)
-        ↓
-Gap Analyzer (갭 분류)
-        ↓
-Recommendation Engine (추천 생성)
-        ↓
-Report Builder → report.json
-        ↓
-Text Template Engine (문장 생성)
-        ↓
-HTML Renderer → report.html
-        ↓
-PDF Engine → report.pdf
-```
+Week 1 — Architecture Week  (Day 1~5 완료, Day 6~7 잔여)
+  완료: 00~09 문서 (Vision, PRD, User Flow, ERD, Payload, Report Schema,
+                    Scoring Rules, Skill Taxonomy, Evidence Rules)
+  잔여: data/job_requirements_*.json 10종 생성 + sample_input/report.json (HR, Data)
 
----
+Week 2 — Engine Week
+  목표: 6개 엔진 모듈 → report.json 자동 생성 (HR, Data로 검증)
 
-## 레포 구조
-
-```
-careerfit/
-├── backend/
-│   ├── engine/
-│   │   ├── input_normalizer.py
-│   │   ├── skill_tagger.py
-│   │   ├── evidence_extractor.py
-│   │   ├── requirement_matcher.py
-│   │   ├── scoring_engine.py
-│   │   ├── gap_analyzer.py
-│   │   ├── recommendation_engine.py
-│   │   └── report_builder.py
-│   ├── api/
-│   │   └── routes/
-│   │       └── reports.py
-│   ├── services/
-│   │   └── report_service.py
-│   ├── models/
-│   │   ├── db.py
-│   │   └── schemas.py
-│   ├── pdf/
-│   │   ├── templates/
-│   │   │   └── report.html.j2
-│   │   └── generator.py
-│   └── main.py
-├── frontend/
-│   └── src/
-│       ├── pages/
-│       │   ├── Landing.tsx
-│       │   ├── ReportNew.tsx
-│       │   └── ReportResult.tsx
-│       └── api/
-│           └── reports.ts
-├── data/
-│   ├── job_requirements_hr.json
-│   ├── job_requirements_marketing.json
-│   ├── job_requirements_data.json
-│   ├── job_requirements_product.json
-│   └── job_requirements_operations.json
-├── docs/
-│   └── *.md
-├── scripts/
-│   ├── seed_requirements.py
-│   └── test_engine.py
-└── output/
-    ├── sample_input.json
-    ├── sample_report.json
-    └── sample_report.pdf
+Week 3 — Product Week
+  목표: Template → HTML → PDF → API → DB → React → Deploy
 ```
 
 ---
 
 ---
 
-# WEEK 1 — 설계 + Engine 뼈대
-
-**목표:** `input.json` → `report.json` 구조 100% 확정. 코드 50%.
+# WEEK 1 (잔여) — Requirement DB + Fixture 작성
 
 ---
 
-## Day 1 — 프로젝트 세팅 + Vision 문서
+## Day 6 — Job Family Requirement DB 생성 (10개)
 
-### 작업
+### 작업: `data/job_requirements_*.json` × 10
 
-```bash
-mkdir -p careerfit/{backend/engine,backend/api,backend/services,backend/models,backend/pdf/templates,frontend/src/{pages,api},data,docs,scripts,output}
-cd careerfit && git init
-touch .cursorrules .gitignore README.md
-```
-
-### 문서 작성
-
-- `docs/00_PROJECT_VISION.md` — 미션, 4대 원칙 (Evidence First / Deterministic First / Report JSON First / LLM Optional)
-- `docs/01_PRD.md` — 목표, 타겟 유저, V1 In/Out Scope, 성공 기준
-
-### 완료 기준
-
-- [ ] 레포 구조 생성 완료
-- [ ] Vision 문서 읽으면 "뭘 만드는지" 3줄로 설명 가능
-
----
-
-## Day 2 — 핵심 데이터 계약 확정
-
-### 작업
-
-- `docs/02_USER_FLOW.md` — Landing → Form → Generating → Result → PDF
-- `docs/03_ERD.md` — 8개 테이블, 관계, SQL DDL 전체
-- `docs/04_PAYLOAD_CONTRACT.md` — Frontend Request / Backend Request / Algorithm Request / Algorithm Response / Error Format
-
-### 핵심 산출물: `output/sample_input.json`
-
-```json
-{
-  "target_job_family": "HR",
-  "career_histories": [
-    {
-      "company_name": "주식회사 ABC",
-      "title": "HR 매니저",
-      "start_date": "2020-03",
-      "end_date": "2023-12",
-      "is_current": false,
-      "responsibilities": "신입 채용 전 과정 운영. JD 작성, 서류 검토, 임원 면접 조율. 온보딩 프로그램 설계 및 운영. HR 데이터북 분기별 작성.",
-      "achievements": "연간 채용 목표 120% 달성. 온보딩 만족도 4.6/5.0. 이직률 18% → 11% 감소."
-    }
-  ]
-}
-```
-
-### 완료 기준
-
-- [ ] `sample_input.json` 확정
-- [ ] ERD 테이블 8개 전부 컬럼/타입/관계 정의 완료
-- [ ] Payload 계약 문서에 Request/Response 예시 전부 있음
-
----
-
-## Day 3 — Report JSON 스키마 확정
-
-### 작업
-
-- `docs/05_REPORT_SCHEMA.md` — 13개 섹션 전체 JSON 구조 정의
-
-### 핵심 산출물: `output/sample_report.json` 뼈대
-
-Report JSON의 모든 key가 존재하는 빈 뼈대를 손으로 작성한다.  
-값은 임시 placeholder여도 됨. **구조만 확정.**
-
-```json
-{
-  "meta": { "report_id": "...", "target_job_family": "HR", "engine_version": "1.0.0" },
-  "summary": { "total_score": 0, "fit_level": "", "one_line": "" },
-  "careerProfile": { "total_experience_months": 0, "extracted_skills": [] },
-  "targetJobAnalysis": { "core_requirements": [] },
-  "skillMapping": { "matched": [], "unmatched": [] },
-  "evidenceMapping": [],
-  "scores": { "total": 0, "breakdown": {} },
-  "strengths": [],
-  "gaps": [],
-  "recommendations": { "short_term": [], "mid_term": [] },
-  "roadmap": { "phases": [] },
-  "reportSections": []
-}
-```
-
-### 완료 기준
-
-- [ ] `sample_report.json` 뼈대 확정 (모든 key 존재)
-- [ ] "이 JSON만 있으면 PDF를 만들 수 있다"는 확신
-
----
-
-## Day 4 — Skill Taxonomy 확정
-
-### 작업
-
-- `docs/07_SKILL_TAXONOMY.md` — 100~150개 스킬 정의
-
-### 스킬 카테고리 구성
-
-```
-공통 (15개)
-  communication, stakeholder_management, documentation,
-  project_management, data_analysis, presentation,
-  problem_solving, coordination, leadership, mentoring,
-  excel, reporting, budgeting, process_design, training
-
-HR 특화 (12개)
-  recruiting, onboarding, performance_management,
-  payroll, hr_policy, labor_law, employee_relations,
-  hris, headcount_planning, org_design, culture_building,
-  exit_management
-
-Marketing 특화 (12개)
-  content_marketing, campaign_management, seo_sem,
-  brand_management, copywriting, social_media,
-  growth_hacking, marketing_analytics, email_marketing,
-  influencer_marketing, event_management, crm
-
-Data 특화 (12개)
-  sql, python, r, data_visualization, statistics,
-  ml_fundamentals, data_pipeline, ab_testing,
-  data_governance, bi_tools, feature_engineering, tableau
-
-Product 특화 (12개)
-  product_planning, user_research, roadmap_management,
-  ux_sense, sprint_management, metric_definition,
-  competitive_analysis, wireframing, go_to_market,
-  pricing_strategy, feature_prioritization, product_analytics
-
-Operations 특화 (12개)
-  process_improvement, operations_management,
-  vendor_management, quality_management, cost_management,
-  logistics, customer_success, sla_management,
-  inventory_management, erp_management, compliance, risk_management
-```
-
-### 완료 기준
-
-- [ ] 각 스킬마다 `skill_key`, `label_ko`, `description`, `category` 정의
-- [ ] 총 75개 이상 확정
-
----
-
-## Day 5 — Evidence Rules 확정
-
-### 작업
-
-- `docs/08_EVIDENCE_RULES.md` — 키워드 → skill_key 매핑 전체 테이블
-
-### EXPLICIT 매핑 (직접 언급, 50개 이상)
-
-```
-"채용", "JD 작성", "서류 전형", "면접" → recruiting
-"온보딩", "OJT", "입문 교육" → onboarding
-"성과 평가", "KPI", "MBO" → performance_management
-"SQL", "쿼리" → sql
-"Python", "파이썬" → python
-"대시보드", "시각화" → data_visualization
-"A/B 테스트" → ab_testing
-"캠페인" → campaign_management
-"SEO", "SEM" → seo_sem
-"PRD", "제품 기획" → product_planning
-"스프린트", "스크럼" → sprint_management
-"벤더", "외주" → vendor_management
-"프로세스 개선" → process_improvement
-...
-```
-
-### INFERRED 매핑 (맥락 추론, 30개 이상)
-
-```
-"후보자 관리" → recruiting (0.8)
-"데이터 취합" → data_analysis (0.7)
-"엑셀로 집계" → excel (0.8)
-"일정 조율" → coordination (0.8)
-"팀원 피드백" → performance_management (0.6)
-"고객 응대" → customer_success (0.75)
-"예산 관리" → budgeting (0.8)
-...
-```
-
-### 완료 기준
-
-- [ ] EXPLICIT 50개 이상 매핑 테이블 완성
-- [ ] INFERRED 30개 이상 매핑 테이블 완성
-- [ ] `sample_input.json` 텍스트를 손으로 파싱해서 Evidence 추출 결과 검증
-
----
-
-## Day 6 — Scoring Rules + Requirement DB
-
-### 작업 1: `docs/06_SCORING_RULES.md`
-
-점수 공식 확정:
-
-```
-total_score = Σ (weight × match_score × 100)
-
-matchLevel → match_score:
-  FULL    = 1.00
-  STRONG  = 0.75
-  PARTIAL = 0.50
-  WEAK    = 0.25
-  NONE    = 0.00
-
-core penalty:
-  is_core + NONE → -5.0
-  is_core + WEAK → -2.5
-```
-
-### 작업 2: `data/` Requirement JSON 5개 작성
-
-`data/job_requirements_hr.json` 예시:
-
-```json
-[
-  { "requirement_key": "recruiting",          "label_ko": "채용 관리",   "weight": 0.20, "is_core": true  },
-  { "requirement_key": "onboarding",          "label_ko": "온보딩",      "weight": 0.15, "is_core": true  },
-  { "requirement_key": "performance_management","label_ko": "성과 관리", "weight": 0.15, "is_core": true  },
-  { "requirement_key": "hr_policy",           "label_ko": "HR 정책",    "weight": 0.12, "is_core": false },
-  { "requirement_key": "payroll",             "label_ko": "급여 관리",   "weight": 0.10, "is_core": false },
-  { "requirement_key": "labor_law",           "label_ko": "노동법",      "weight": 0.10, "is_core": false },
-  { "requirement_key": "stakeholder_management","label_ko": "이해관계자","weight": 0.08, "is_core": false },
-  { "requirement_key": "documentation",       "label_ko": "문서화",      "weight": 0.05, "is_core": false },
-  { "requirement_key": "data_analysis",       "label_ko": "데이터 분석", "weight": 0.05, "is_core": false }
-]
-```
-
-**weight 합계 = 1.0 필수 검증**
-
-### 완료 기준
-
-- [ ] 5개 Job Family Requirement JSON 완성, 각 weight 합계 = 1.0
-- [ ] `sample_input.json` → 수작업 점수 계산으로 예상 점수 도출
-
----
-
-## Day 7 — Engine Skeleton
-
-### 작업: 각 파일 인터페이스(함수 시그니처) 작성
+`06_SCORING_RULES.md` §2.2 `allocate_weights()` 알고리즘을 실행하는 시딩 스크립트를 작성한다.
 
 ```python
-# input_normalizer.py
-def normalize_input(raw_input: dict) -> NormalizedInput:
-    """Frontend payload → 엔진용 정제 구조체"""
+# scripts/generate_requirements.py
+import json
+from pathlib import Path
 
-# skill_tagger.py
-def tag_skills(career_history: CareerHistory) -> list[SkillTag]:
-    """경력 텍스트 → skill_key 리스트"""
+JOB_FAMILIES = {
+    "hr": {
+        "core_skill_keys": ["recruiting", "training_and_onboarding", "labor_law", "payroll"],
+        "common_skill_keys": ["communication", "stakeholder_management", "documentation",
+                               "performance_management", "employee_relations"],
+        "is_core_overrides": {"recruiting": True, "training_and_onboarding": True, "labor_law": True},
+    },
+    "marketing": {
+        "core_skill_keys": ["campaign_management", "seo_sem", "content_marketing", "brand_management"],
+        "common_skill_keys": ["communication", "data_analysis", "presentation",
+                               "social_media", "marketing_analytics"],
+        "is_core_overrides": {"campaign_management": True, "seo_sem": True},
+    },
+    "data": {
+        "core_skill_keys": ["sql", "python", "data_visualization", "statistics"],
+        "common_skill_keys": ["communication", "documentation", "data_analysis",
+                               "ab_testing", "presentation"],
+        "is_core_overrides": {"sql": True, "python": True},
+    },
+    "product": {
+        "core_skill_keys": ["product_planning", "roadmap_management", "user_research", "ux_sense"],
+        "common_skill_keys": ["communication", "stakeholder_management", "data_analysis",
+                               "sprint_management", "competitive_analysis"],
+        "is_core_overrides": {"product_planning": True, "roadmap_management": True},
+    },
+    "operations": {
+        "core_skill_keys": ["process_improvement", "vendor_management", "operations_management", "logistics"],
+        "common_skill_keys": ["process_design", "vendor_coordination", "cost_management",
+                               "quality_control", "coordination"],
+        "is_core_overrides": {"process_improvement": True, "operations_management": True},
+    },
+    "sales": {
+        "core_skill_keys": ["lead_generation", "account_management", "negotiation", "crm_management"],
+        "common_skill_keys": ["communication", "negotiation_basic", "crossfunctional_collab",
+                               "forecasting", "pipeline_management"],
+        "is_core_overrides": {"lead_generation": True, "account_management": True},
+    },
+    "design": {
+        "core_skill_keys": ["ui_design", "prototyping", "design_systems", "user_research"],
+        "common_skill_keys": ["communication", "stakeholder_management", "wireframing",
+                               "accessibility", "presentation"],
+        "is_core_overrides": {"ui_design": True, "prototyping": True},
+    },
+    "finance": {
+        "core_skill_keys": ["financial_modeling", "budgeting_advanced", "accounting", "financial_reporting"],
+        "common_skill_keys": ["excel", "reporting", "budgeting", "cost_management", "tax_compliance"],
+        "is_core_overrides": {"financial_modeling": True, "accounting": True},
+    },
+    "engineering": {
+        "core_skill_keys": ["software_development", "code_review", "system_design", "debugging"],
+        "common_skill_keys": ["documentation", "problem_solving", "api_design",
+                               "testing_qa", "crossfunctional_collab"],
+        "is_core_overrides": {"software_development": True, "system_design": True},
+    },
+    "customer_success": {
+        "core_skill_keys": ["customer_onboarding", "churn_management", "support_ticketing", "account_health"],
+        "common_skill_keys": ["communication", "stakeholder_management", "customer_feedback_analysis",
+                               "renewal_management", "data_analysis"],
+        "is_core_overrides": {"customer_onboarding": True, "churn_management": True},
+    },
+}
 
-# evidence_extractor.py
+# label_ko, description은 07_SKILL_TAXONOMY.md에서 조회 (생략, 실제로는 lookup table 사용)
+
+for family, config in JOB_FAMILIES.items():
+    requirements = allocate_weights(config["core_skill_keys"], config["common_skill_keys"])
+    for req in requirements:
+        req.is_core = config["is_core_overrides"].get(req.requirement_key, False)
+    validate_job_family_weights(requirements)  # 06_SCORING_RULES.md §2.4
+
+    output_path = Path(f"data/job_requirements_{family}.json")
+    output_path.write_text(json.dumps([r.dict() for r in requirements], ensure_ascii=False, indent=2))
+    print(f"{family}: UNIQUE={sum(r.weight for r in requirements if r.skill_group=='UNIQUE')}, "
+          f"COMMON={sum(r.weight for r in requirements if r.skill_group=='COMMON')}")
+```
+
+### 완료 기준
+
+- [ ] `data/job_requirements_*.json` 10개 생성
+- [ ] 10개 전부 `validate_job_family_weights()` 통과 (UNIQUE=0.65, COMMON=0.35, ±0.001)
+- [ ] `product`와 `design`의 `user_research` 중복 지정 확인 (07_SKILL_TAXONOMY.md §0 원칙 3 — 의도된 설계)
+- [ ] `data/gap_recommendations.json` — 79개 skill_key 전체에 대한 추천 문구 작성 (08_EVIDENCE_RULES.md 커버리지와 1:1)
+
+---
+
+## Day 7 — Sample Input + Sample Report (HR, Data — 손작성)
+
+### 오전: `output/sample_input_hr.json`, `output/sample_input_data.json`
+
+각 Job Family당 경력 2개, `08_EVIDENCE_RULES.md`의 EXPLICIT/INFERRED/ACHIEVED 키워드가  
+풍부하게 들어간 실제와 같은 텍스트로 작성한다. (이전 대화에서 작성한 `sample_input_hr.json` 재사용 가능)
+
+### 오후: `output/sample_report_hr.json`, `output/sample_report_data.json` — **손으로 직접 작성**
+
+> Week 1의 진짜 핵심 산출물. 엔진 없이 사람이 직접 채운 "정답".
+
+작업 순서:
+```
+1. sample_input_*.json의 responsibilities/achievements를 읽는다
+2. 08_EVIDENCE_RULES.md 매핑표로 evidences[] 직접 추출 (confidence_total 계산 포함)
+3. 06_SCORING_RULES.md §4 알고리즘으로 matchLevel 수작업 결정
+4. job_requirements_hr.json / job_requirements_data.json의 weight로 점수 계산
+   (06_SCORING_RULES.md §5 예시와 동일한 방식 — unique_total/common_total/core_penalty/total)
+5. 05_REPORT_SCHEMA.md 12개 top-level key 전부 값 채우기
+```
+
+### 완료 기준
+
+- [ ] `sample_input_hr.json`, `sample_input_data.json` 완성
+- [ ] `sample_report_hr.json`, `sample_report_data.json` — 12개 key 전부 실제 값, null 없음
+- [ ] 두 sample_report에 **`05_REPORT_SCHEMA.md` 부록의 구조 검증 스크립트** 실행 → 키 집합 100% 동일
+- [ ] `sample_report_hr.json.scores.total == unique_total + common_total` 등 06_SCORING_RULES.md §10 불변규칙 10개 전부 수동 검증
+
+### Week 1 최종 마감 체크리스트
+
+```
+[ ] docs/00~12 (13개 중 12개) 확정          ← 이미 완료
+[ ] data/job_requirements_*.json × 10       ← Day 6
+[ ] data/gap_recommendations.json (79 skills) ← Day 6
+[ ] sample_input_hr/data.json                ← Day 7
+[ ] sample_report_hr/data.json (손작성 정답)  ← Day 7
+[ ] 구조 통일성 검증 통과                     ← Day 7
+```
+
+**이 시점 체감 완성도: 약 35%** (문서 작업이 v2에서 더 무거워진 만큼 기준 상향)
+
+---
+
+---
+
+# WEEK 2 — Engine Week
+
+**목표:** `sample_input_*.json` → (엔진) → Day 7의 `sample_report_*.json`과 거의 일치하는 결과를 코드가 자동 생성한다.
+
+**버퍼 전략:** Day 14는 통합 검증일. 막힐 경우 Week 3 Day 15(Text Template, 코드량 적음)와 순서 교체 가능.
+
+---
+
+## Day 8 — Evidence Extractor
+
+### 작업: `engine/evidence_extractor.py`
+
+```python
 def extract_evidences(career_history: CareerHistory) -> list[Evidence]:
-    """경력 텍스트 → Evidence 리스트 (original_text 보존)"""
+    """08_EVIDENCE_RULES.md §6 의사코드 그대로 구현. 79개 skill_key 전체 매핑 dict 로드."""
+```
 
-# requirement_matcher.py
+### 구현 순서
+1. `08_EVIDENCE_RULES.md` §3~5의 EXPLICIT/INFERRED/ACHIEVED 매핑을 `data/evidence_rules.json`으로 분리
+2. 문장 분리 (`.` `\n` 기준)
+3. 키워드 매칭 → Evidence 생성 (§6 의사코드)
+4. `confidence_score < 0.5` 필터링, 중복 제거 (§7 불변규칙)
+
+### 검증
+```bash
+python scripts/test_engine.py --step evidence --input output/sample_input_hr.json
+# diff 비교: 추출 결과 vs sample_report_hr.json.evidenceMapping
+```
+
+### 완료 기준
+- [ ] `sample_input_hr.json` → evidences[] 최소 8개 추출
+- [ ] `sample_report_hr.json.evidenceMapping`과 skill_key 기준 80% 이상 일치
+- [ ] `sample_input_data.json`도 동일 테스트 통과
+- [ ] EXPLICIT+ACHIEVED 동시 존재 케이스(예: recruiting)에서 둘 다 보존되는지 확인 (중복 제거 로직이 evidence_type 다른 건 살리는지)
+
+---
+
+## Day 9 — Requirement Matching + confidence_total
+
+### 작업: `engine/requirement_matcher.py`
+
+```python
 def match_requirements(
     evidences: list[Evidence],
-    requirements: list[Requirement]
+    requirements: list[Requirement]  # data/job_requirements_<family>.json에서 로드
 ) -> list[RequirementMatch]:
-    """Evidence × Requirement → matchLevel 결정"""
-
-# scoring_engine.py
-def calculate_score(matches: list[RequirementMatch]) -> ScoreResult:
-    """matchLevel + weight → 총점 + breakdown"""
-
-# gap_analyzer.py
-def analyze_gaps(matches: list[RequirementMatch], requirements: list[Requirement]) -> list[Gap]:
-    """미충족 요구사항 → Gap + severity"""
-
-# recommendation_engine.py
-def generate_recommendations(gaps: list[Gap], job_family: str) -> Recommendations:
-    """Gap → 단기/중기 추천 행동"""
-
-# report_builder.py
-def build_report(
-    normalized_input: NormalizedInput,
-    evidences: list[Evidence],
-    matches: list[RequirementMatch],
-    score: ScoreResult,
-    gaps: list[Gap],
-    recommendations: Recommendations
-) -> ReportJSON:
-    """모든 결과 → report.json 조립"""
+    """06_SCORING_RULES.md §4 determine_match_level() 사용.
+       반환값에 confidence_total 포함 (04_PAYLOAD_CONTRACT.md §2 Algorithm Response 필드)."""
 ```
 
-### Pydantic 모델 초안
-
-```python
-# models/schemas.py
-class Evidence(BaseModel):
-    career_history_id: str
-    skill_key: str
-    original_text: str          # 절대 수정 금지
-    evidence_type: EvidenceType # EXPLICIT | INFERRED | ACHIEVED
-    confidence_score: float     # 0.0 ~ 1.0
-
-class RequirementMatch(BaseModel):
-    requirement_key: str
-    match_level: MatchLevel     # FULL|STRONG|PARTIAL|WEAK|NONE
-    match_score: float
-    matched_evidence_ids: list[str]
-
-class ScoreResult(BaseModel):
-    total: float
-    breakdown: dict[str, BreakdownItem]
-
-class Gap(BaseModel):
-    requirement_key: str
-    gap_severity: GapSeverity   # CRITICAL|MAJOR|MINOR
-    gap_reason: str
-    recommendation: str
-    priority_order: int
-```
+`06_SCORING_RULES.md` §4의 `determine_match_level()`을 그대로 구현한다 (이미 알고리즘 확정됨 — 신규 작성 아님).
 
 ### 완료 기준
-
-- [ ] 7개 engine 파일 생성, 함수 시그니처 전부 작성
-- [ ] Pydantic 스키마 초안 작성
-- [ ] `python -c "from engine import report_builder"` 오류 없음
-
----
+- [ ] HR 9개 requirement 전부 matchLevel + confidence_total 산출
+- [ ] `06_SCORING_RULES.md` §5 예시 표(recruiting=FULL/1.9, labor_law=NONE/0.0 등)와 일치
+- [ ] `sample_report_hr.json.skillMapping`과 매칭 결과 비교 → 불일치 시 둘 중 하나 수정
 
 ---
 
-# WEEK 2 — Engine 구현 + PDF
+## Day 10 — Scoring Engine (UNIQUE/COMMON 분리 + Core Penalty)
 
-**목표:** `python scripts/test_engine.py` → `output/report.json` 생성
-
----
-
-## Day 8 — Skill Tagger 구현
-
-### 구현 목표
+### 작업: `engine/scoring_engine.py`
 
 ```python
-input:  "신입 채용 전 과정 운영. JD 작성, 서류 검토, 임원 면접 조율."
-output: [
-  SkillTag(skill_key="recruiting", evidence_type="EXPLICIT", confidence=1.0),
-  SkillTag(skill_key="stakeholder_management", evidence_type="INFERRED", confidence=0.7)
-]
+def calculate_score(matches: list[RequirementMatch], requirements: list[Requirement]) -> ScoreResult:
+    """
+    06_SCORING_RULES.md §1, §6 구현.
+    - unique_total, common_total 분리 계산
+    - apply_core_penalty() 적용 (penalty는 unique_total에서만 차감)
+    - calculate_final_scores()로 최종 total 산출
+    """
 ```
 
-### 구현 방식
-
-1. `08_EVIDENCE_RULES.md`의 EXPLICIT 키워드 테이블을 Python dict로 로드
-2. 텍스트에서 키워드 매칭 (단순 `in` 연산자, 정규식 보조)
-3. INFERRED 패턴은 별도 리스트로 관리
-
-### 테스트
-
+### 결정론적 검증 (필수)
 ```bash
-python scripts/test_engine.py --step skill_tagger --input output/sample_input.json
-```
-
-### 완료 기준
-
-- [ ] `sample_input.json`에서 최소 5개 skill_key 추출
-- [ ] `original_text`가 원문 그대로 보존됨
-
----
-
-## Day 9 — Evidence Extractor 구현
-
-### 구현 목표
-
-```json
-{
-  "skill_key": "recruiting",
-  "original_text": "신입 채용 전 과정 운영. JD 작성, 서류 검토, 임원 면접 조율.",
-  "evidence_type": "EXPLICIT",
-  "confidence_score": 1.0
-}
-```
-
-### 구현 포인트
-
-- 키워드가 속한 문장 전체를 `original_text`로 추출 (문장 분리 기준: `.` 또는 `\n`)
-- 동일 `skill_key`에 여러 문장 매핑 가능
-- `achievements` 필드는 ACHIEVED 타입으로 별도 처리
-
-### 테스트
-
-```bash
-python scripts/test_engine.py --step evidence_extractor --input output/sample_input.json
-```
-
-### 완료 기준
-
-- [ ] `sample_input.json` → `evidences[]` 배열 출력
-- [ ] 각 evidence에 `original_text` 원문 포함 확인
-
----
-
-## Day 10 — Requirement Matcher 구현
-
-### 구현 목표
-
-```python
-input:
-  evidences: [Evidence(skill_key="recruiting", confidence=1.0), ...]
-  requirements: job_requirements_hr.json 로드
-
-output:
-  [
-    RequirementMatch(requirement_key="recruiting", match_level="FULL", match_score=1.0),
-    RequirementMatch(requirement_key="payroll", match_level="NONE", match_score=0.0),
-    ...
-  ]
-```
-
-### matchLevel 결정 로직
-
-```python
-def determine_match_level(evidences: list[Evidence]) -> MatchLevel:
-    explicit = [e for e in evidences if e.evidence_type == "EXPLICIT"]
-    inferred = [e for e in evidences if e.evidence_type == "INFERRED"]
-    achieved = [e for e in evidences if e.evidence_type == "ACHIEVED"]
-
-    if len(explicit) >= 2:                          return FULL
-    if len(explicit) >= 1 and sum_confidence >= 1.8: return FULL
-    if len(explicit) >= 1:                          return STRONG
-    if len(inferred) >= 2:                          return PARTIAL
-    if len(inferred) >= 1 and len(achieved) >= 1:   return PARTIAL
-    if len(inferred) >= 1:                          return WEAK
-    return NONE
-```
-
-### 완료 기준
-
-- [ ] 9개 HR requirement 전부 matchLevel 결정됨
-- [ ] NONE이 아닌 항목은 반드시 `matched_evidence_ids` 존재
-
----
-
-## Day 11 — Scoring Engine 구현
-
-### 구현 목표
-
-```python
-input:  [RequirementMatch, ...]
-output: ScoreResult(total=78.5, breakdown={...})
-```
-
-### 구현 로직
-
-```python
-def calculate_score(matches, requirements) -> ScoreResult:
-    raw_score = sum(
-        req.weight * MATCH_SCORE[match.match_level] * 100
-        for req, match in zip(requirements, matches)
-    )
-    penalty = apply_core_penalty(matches, requirements)
-    total = max(0.0, raw_score + penalty)
-    return ScoreResult(total=round(total, 1), breakdown=build_breakdown(...))
-```
-
-### 결정론적 검증
-
-```bash
-# 동일 입력 3회 실행, 점수 동일한지 확인
 for i in 1 2 3; do
-  python scripts/test_engine.py --step scoring --input output/sample_input.json | grep total_score
+  python scripts/test_engine.py --step score --input output/sample_input_hr.json | grep -E "total|unique|common|penalty"
 done
+# 3회 동일 값 확인
 ```
 
 ### 완료 기준
-
-- [ ] `sample_input.json` → `total_score` 출력
-- [ ] 3회 실행 동일 점수 확인
-- [ ] breakdown에 9개 requirement 전부 포함
+- [ ] HR/Data 각각 `total`, `unique_total`, `common_total`, `core_penalty` 산출
+- [ ] `06_SCORING_RULES.md` §5 예시(total=63.0)와 동일한 입력으로 동일 결과 재현
+- [ ] 3회 실행 동일 점수
+- [ ] §10 불변규칙 1~7 코드 검증 (assert)
 
 ---
 
-## Day 12 — Gap Analyzer 구현
+## Day 11 — Gap Analyzer (skill_group 포함)
 
-### 구현 목표
-
-```json
-{
-  "requirement_key": "payroll",
-  "label_ko": "급여 관리",
-  "gap_severity": "MAJOR",
-  "gap_reason": "급여 관련 직접 경험이 확인되지 않습니다.",
-  "recommendation": "급여 계산 실무 경험 또는 ERP정보관리사 자격증 취득을 권장합니다.",
-  "priority_order": 1
-}
-```
-
-### severity 분류 기준
+### 작업: `engine/gap_analyzer.py`
 
 ```python
-def classify_severity(req, match) -> GapSeverity:
-    if req.is_core and match.match_level in [NONE, WEAK]:
-        return CRITICAL
-    if req.weight >= 0.10 and match.match_level <= PARTIAL:
-        return MAJOR
-    return MINOR
-```
-
-### 추천 텍스트: `data/gap_recommendations.json`
-
-각 skill_key별 gap 발생 시 추천 행동을 사전 정의.
-
-```json
-{
-  "payroll": "급여 계산 실무 경험 또는 ERP정보관리사 자격증 취득을 권장합니다.",
-  "labor_law": "노동법 온라인 강의 수강 (40시간) 또는 노무사 시험 준비를 권장합니다.",
-  "sql": "프로그래머스 SQL 코딩 테스트 Level 2 이상 완료를 목표로 학습하세요."
-}
+def analyze_gaps(matches: list[RequirementMatch], requirements: list[Requirement]) -> list[Gap]:
+    """
+    06_SCORING_RULES.md §8 classify_gap_severity() + assign_priority_order() 구현.
+    report_gaps.skill_group 컬럼(03_ERD.md §2.8)에 대응하는 필드 포함.
+    """
 ```
 
 ### 완료 기준
-
-- [ ] Gap 목록 생성, priority_order 1부터 정렬
-- [ ] CRITICAL/MAJOR/MINOR 분류 정확성 수동 검증
+- [ ] gaps[] 생성, `skill_group`(UNIQUE/COMMON) 포함, priority_order 정렬 확인
+- [ ] `data/gap_recommendations.json`(79개) 전체에서 recommendation 텍스트 조회 성공
+- [ ] `sample_report_hr.json.gaps`와 severity 분류 일치 확인
+- [ ] COMMON + CRITICAL 조합이 발생하지 않는지 확인 (09_TEXT_TEMPLATE_RULES.md §4 주석)
 
 ---
 
-## Day 13 — Recommendation Engine + Report Builder
+## Day 12 — Recommendation Engine + Strength Selector
 
-### Recommendation Engine
+### 작업 1: `engine/recommendation_engine.py`
 
 ```python
-input:  gaps: list[Gap], job_family: str
-output: Recommendations(
-  short_term=[Action(action="...", timeframe="1-2개월"), ...],
-  mid_term=[Action(action="...", timeframe="3-6개월"), ...]
-)
+def generate_recommendations(gaps: list[Gap], unique_score: float, job_family: str) -> Recommendations:
+    """09_TEXT_TEMPLATE_RULES.md §5 select_mid_term_template() 사용
+       (unique_score/65 >= 0.6 기준으로 high/low 템플릿 분기)"""
+
+def generate_roadmap(gaps: list[Gap]) -> Roadmap:
+    """3 phase 고정 (05_REPORT_SCHEMA.md §11)"""
 ```
 
-**단기:** CRITICAL/MAJOR gap 중 상위 3개 → 즉시 행동
-**중기:** MINOR gap + 전반적 지원 전략
-
-### Report Builder
-
-7개 엔진 결과를 `05_REPORT_SCHEMA.md` 구조로 조립.
+### 작업 2: `engine/strength_selector.py`
 
 ```python
-def build_report(...) -> dict:
+def select_strengths(matches, requirements) -> list[Strength]:
+    """06_SCORING_RULES.md §9 select_strengths() 구현.
+       FULL/STRONG만 후보, weighted_score 내림차순, 동점시 UNIQUE 우선."""
+```
+
+### 완료 기준
+- [ ] recommendations.short_term ≥2, mid_term ≥1
+- [ ] roadmap 3 phase 전부 생성
+- [ ] strengths[] 3개, rank 1·2가 가능한 UNIQUE인지 확인 (sample_report와 비교)
+
+---
+
+## Day 13 — Report Builder (12 top-level keys 조립)
+
+### 작업: `engine/report_builder.py`
+
+```python
+def build_report(normalized_input, evidences, matches, score, gaps, strengths, recommendations, roadmap) -> dict:
     return {
-        "meta": build_meta(report_id, job_family),
-        "summary": build_summary(score, matches),
-        "careerProfile": build_career_profile(input, evidences),
-        "targetJobAnalysis": build_target_job(requirements),
-        "skillMapping": build_skill_mapping(matches),
+        "meta": build_meta(report_id, job_family, engine_version="2.0.0"),
+        "summary": build_summary(score, matches, gaps, strengths),  # unique_score/common_score 포함
+        "careerProfile": build_career_profile(normalized_input, evidences),
+        "targetJobAnalysis": build_target_job(requirements, matches),  # unique/common_requirements 분리
+        "skillMapping": build_skill_mapping(matches, requirements),
         "evidenceMapping": build_evidence_mapping(evidences),
-        "scores": build_scores(score),
-        "strengths": build_strengths(matches, evidences),
-        "gaps": build_gaps(gaps),
-        "recommendations": build_recommendations(recommendations),
-        "roadmap": build_roadmap(gaps, job_family),
-        "reportSections": build_sections()
+        "scores": score.dict(),  # unique_total, common_total, core_penalty 포함
+        "strengths": [s.dict() for s in strengths],
+        "gaps": [g.dict() for g in gaps],
+        "recommendations": recommendations.dict(),
+        "roadmap": roadmap.dict(),
+        "reportSections": DEFAULT_12_SECTIONS  # 10_PDF_TEMPLATE_SPEC.md §2
     }
 ```
 
 ### 완료 기준
-
-- [ ] `output/sample_report.json` 생성 완료
-- [ ] Day 3에서 만든 뼈대와 구조 일치 확인
-- [ ] 모든 key 채워짐, null 없음
+- [ ] `python scripts/test_engine.py --input output/sample_input_hr.json --output output/generated_report_hr.json` 실행 성공
+- [ ] `generated_report_hr.json`이 `05_REPORT_SCHEMA.md`의 12개 top-level key 전부 포함, null 없음
+- [ ] `summary.unique_score + summary.common_score == summary.total_score`
 
 ---
 
-## Day 14 — End-to-End Engine 테스트
+## Day 14 — 통합 검증 (버퍼 데이)
 
-### E2E 테스트 스크립트
+### E2E 테스트
 
 ```bash
-python scripts/test_engine.py \
-  --input output/sample_input.json \
-  --output output/sample_report.json \
-  --job-family HR
+for family in hr data; do
+  python scripts/test_engine.py \
+    --input output/sample_input_${family}.json \
+    --output output/generated_report_${family}.json
+done
 ```
 
 ### 검증 체크리스트
 
 ```
-[ ] sample_report.json 생성됨
-[ ] total_score 0 < score < 100
-[ ] evidences[] 최소 3개 이상
-[ ] gaps[] 최소 1개 이상
-[ ] recommendations.short_term 최소 2개 이상
-[ ] 모든 evidence에 original_text 존재
-[ ] 3회 실행 동일 점수 (결정론적 검증)
-[ ] LLM 없이도 report_json 완성됨
+[ ] 2개 Job Family 전부 generated_report 생성 성공
+[ ] generated_report.json 구조(key) == sample_report.json 구조(key) — 05_REPORT_SCHEMA.md 부록 스크립트로 검증
+[ ] generated_report_hr.json 구조 == generated_report_data.json 구조 (Job Family 무관 통일성)
+[ ] 0 < total_score < 100, 0 <= unique_total <= 65, 0 <= common_total <= 35
+[ ] evidences ≥ 5개, gaps ≥ 1개, recommendations ≥ 2개
+[ ] 3회 실행 동일 결과 (결정론적)
+[ ] 06_SCORING_RULES.md §10 불변규칙 10개 전부 통과
+[ ] LLM 없이 완성 (이 시점에 LLM 코드 없음 — 자연히 충족)
 ```
 
-### 5개 Job Family 테스트
+### 버퍼 규칙
+- 위 체크리스트가 Day 14 안에 끝나면 → Week 3 Day 15(Text Template) 선작업 시작
+- 끝나지 않으면 → Day 15를 통합 검증 마무리로 쓰고, Day 21(Deploy)은 고정한 채 Day 20(React 디자인 다듬기)을 축소해 흡수
 
-```bash
-for family in HR Marketing Data Product Operations; do
-  python scripts/test_engine.py \
-    --input output/sample_input_${family,,}.json \
-    --output output/sample_report_${family,,}.json \
-    --job-family $family
-  echo "$family: done"
-done
+### Week 2 마감 체크리스트
+
+```
+[ ] sample_input_*.json → generated_report_*.json 자동 생성 파이프라인 완성
+[ ] 결정론적 검증 통과
+[ ] HR, Data 2개 Job Family 모두 통과
+[ ] (선택) 나머지 8개 Job Family도 job_requirements_*.json만 바꿔 끼워서 generated_report 생성 시도
+    → 에러 없이 생성되면 "Structure-Once, Scale-Many" 원칙이 코드 레벨에서도 검증된 것
 ```
 
-### 완료 기준
-
-- [ ] 5개 Job Family 전부 report.json 생성 성공
-- [ ] 오류 없이 완주
+**이 시점 체감 완성도: 약 65%**
 
 ---
 
 ---
 
-# WEEK 3 — PDF + Backend + Frontend
+# WEEK 3 — Product Week
 
-**목표:** 브라우저에서 리포트 결과 페이지 열람 가능
+**목표:** 사용자 입력 → Report JSON → PDF → 웹 다운로드 전체 흐름이 실제 URL에서 동작한다.
 
 ---
 
 ## Day 15 — Text Template Engine
 
-### 작업
+### 작업: `engine/text_template.py`
 
-- `docs/09_TEXT_TEMPLATE_RULES.md` 구현
-- 점수별/갭 severity별 문장 템플릿 Python 코드로 작성
-
-```python
-# text_template.py
-SUMMARY_TEMPLATES = {
-    "EXCELLENT_FIT": "{job_family_ko} 직무에 매우 높은 적합도({score}점)를 보입니다...",
-    "GOOD_FIT":      "{job_family_ko} 직무에 높은 적합도({score}점)를 보입니다...",
-    "MODERATE_FIT":  "{job_family_ko} 직무에 기본적인 적합도({score}점)를 보입니다...",
-    "LOW_FIT":       "{job_family_ko} 직무와의 적합도({score}점)는 현재 낮은 수준입니다...",
-}
-
-def generate_summary_text(score: float, job_family: str) -> str: ...
-def generate_strength_text(strength: Strength) -> str: ...
-def generate_gap_text(gap: Gap) -> str: ...
-def generate_conclusion_text(score: float, gaps: list[Gap]) -> str: ...
-```
-
-### LLM 폴백 구조
+`09_TEXT_TEMPLATE_RULES.md` §1~6 전체 구현:
 
 ```python
+SUMMARY_TEMPLATES = {...}          # §1
+SCORE_SPLIT_TEMPLATES = {...}      # §2 (v2 신규 — unique/common 분리 서술)
+STRENGTH_HEADLINE_TEMPLATES = {...}# §3
+GAP_HEADLINE_TEMPLATES = {...}     # §4
+RECOMMENDATION_TEMPLATES = {...}   # §5
+CONCLUSION_TEMPLATES = {...}       # §6
+
 def polish_text(template_text: str) -> str:
     try:
-        return llm_polish(template_text)  # 선택적 윤색
+        return llm_polish(template_text)
     except Exception:
-        return template_text              # 폴백: 템플릿 그대로
+        return template_text  # 폴백 (§7)
 ```
 
 ### 완료 기준
-
-- [ ] LLM 없이도 모든 텍스트 생성됨
-- [ ] `sample_report.json`에 텍스트 필드 전부 채워짐
+- [ ] LLM 없이 `generated_report_*.json`의 모든 텍스트 필드(`summary.one_line`, `strengths[].headline/detail`, `gaps[].headline/detail`, `recommendations`, conclusion) 채워짐
+- [ ] `select_split_template()`(§2)이 HR과 Data 양쪽에서 정상 동작 — unique_ratio/common_ratio 기준 4분류 중 올바른 템플릿 선택
+- [ ] LLM 폴백 구조 작성 (실제 LLM 연동은 선택)
 
 ---
 
-## Day 16 — HTML Report 렌더링
+## Day 16 — HTML Renderer (12 섹션 + UNIQUE/COMMON 시각화)
 
-### Jinja2 템플릿 구조
+### 작업: `10_PDF_TEMPLATE_SPEC.md` §4 템플릿 구조 그대로 생성
 
 ```
 backend/pdf/templates/
-├── report.html.j2          # 메인 템플릿
-├── partials/
-│   ├── cover.html.j2
-│   ├── summary.html.j2
-│   ├── skill_mapping.html.j2
-│   ├── evidence_mapping.html.j2
-│   ├── score_chart.html.j2
-│   ├── strength_analysis.html.j2
-│   ├── gap_analysis.html.j2
-│   ├── recommendations.html.j2
-│   └── roadmap.html.j2
-└── static/
-    └── report.css
+├── report.html.j2
+├── partials/  (12개 — cover ~ final_assessment)
+└── static/report.css  (--color-unique, --color-common 등 CSS 변수, §3)
 ```
 
-### 렌더링
-
-```python
-from jinja2 import Environment, FileSystemLoader
-
-def render_html(report_json: dict) -> str:
-    env = Environment(loader=FileSystemLoader("pdf/templates"))
-    template = env.get_template("report.html.j2")
-    return template.render(**report_json)
-```
+`summary.html.j2`에 도넛 차트 2개(unique_score/65, common_score/35), `target_job.html.j2`에 2개 테이블(UNIQUE/COMMON 헤더 색상 구분) 구현.
 
 ### 완료 기준
-
-- [ ] `output/sample_report.html` 생성
-- [ ] 브라우저에서 열어 13개 섹션 전부 확인
+- [ ] `output/sample_report_hr.html` 생성, 브라우저에서 12섹션 확인
+- [ ] `sample_report_data.html`도 동일 템플릿으로 정상 렌더링 (구조 통일성 재확인)
+- [ ] UNIQUE 배지(#2B6CB0)와 COMMON 배지(#90CDF4)가 Section 3~10에서 일관되게 표시되는지 확인
 
 ---
 
 ## Day 17 — PDF Engine
 
-### Playwright 방식
+### 작업: `backend/pdf/generator.py` (Playwright)
 
 ```python
-# pdf/generator.py
-from playwright.sync_api import sync_playwright
-
 def generate_pdf(html_content: str, output_path: str) -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
         page.set_content(html_content)
-        page.pdf(
-            path=output_path,
-            format="A4",
-            margin={"top": "20mm", "bottom": "20mm",
-                    "left": "20mm", "right": "20mm"},
-            print_background=True
-        )
+        page.pdf(path=output_path, format="A4",
+                 margin={"top":"20mm","bottom":"20mm","left":"20mm","right":"20mm"},
+                 print_background=True)
         browser.close()
 ```
 
-### 테스트
-
-```bash
-python -c "
-from pdf.generator import generate_pdf
-html = open('output/sample_report.html').read()
-generate_pdf(html, 'output/sample_report.pdf')
-print('PDF 생성 완료')
-"
-```
-
 ### 완료 기준
-
-- [ ] `output/sample_report.pdf` 생성
-- [ ] 13개 섹션 전부 렌더링 확인
-- [ ] A4 기준 20–35페이지 범위
+- [ ] `output/sample_report_hr.pdf`, `output/sample_report_data.pdf` 생성
+- [ ] A4 기준 12~20페이지 (12섹션 기준, 13섹션 대비 약간 축소)
+- [ ] 색상이 인쇄 시(흑백 시뮬레이션)에도 UNIQUE/COMMON 텍스트 라벨로 구분 가능한지 확인 (10_PDF_TEMPLATE_SPEC.md §2 Section 5 주의사항)
 
 ---
 
-## Day 18 — FastAPI 구현
+## Day 18 — FastAPI
 
-### 엔드포인트 3개
+### 3개 엔드포인트 (`11_API_SPEC.md` 기반)
 
 ```python
-# api/routes/reports.py
-
-@router.post("/reports", status_code=201)
-async def create_report(payload: ReportCreateRequest, background_tasks: BackgroundTasks):
-    report_id = str(uuid4())
-    # DB에 CREATED 상태로 저장
-    background_tasks.add_task(run_engine, report_id, payload)
-    return {"report_id": report_id, "status": "CREATED"}
-
-@router.get("/reports/{report_id}")
-async def get_report(report_id: str):
-    report = await db.get_report(report_id)
-    if not report:
-        raise HTTPException(404, "REPORT_NOT_FOUND")
-    return report
-
-@router.get("/reports/{report_id}/pdf")
-async def get_pdf(report_id: str):
-    report = await db.get_report(report_id)
-    if report.status != "READY":
-        raise HTTPException(202, "REPORT_STILL_PROCESSING")
-    return FileResponse(report.pdf_url, media_type="application/pdf")
+POST /reports                  # CREATED 반환, background task로 엔진 실행
+GET  /reports/{report_id}      # 상태/결과 반환
+GET  /reports/{report_id}/pdf  # PDF 반환
 ```
 
-### 완료 기준
+`target_job_family` 검증 시 10개 ENUM(`04_PAYLOAD_CONTRACT.md` §1) 체크 → `INVALID_JOB_FAMILY` 에러 처리.
 
-- [ ] `uvicorn main:app --reload` 실행
-- [ ] `POST /reports` curl 테스트 성공
-- [ ] `GET /reports/{id}` 상태 반환 확인
+### 완료 기준
+- [ ] `uvicorn main:app --reload` 정상 동작
+- [ ] curl로 3개 엔드포인트 E2E 테스트 (HR로 생성 → 폴링 → PDF)
+- [ ] 잘못된 job_family("ACCOUNTING" 등) 입력 시 400 + `INVALID_JOB_FAMILY` 확인
 
 ---
 
 ## Day 19 — Supabase 연동
 
-### 마이그레이션 실행
+### 작업
+1. `03_ERD.md` migration 실행 (ENUM 6종: report_status, job_family(10), evidence_type, skill_group, match_level, gap_severity + 테이블 8개)
+2. `job_requirement_stats` 시딩 — Day 6에서 생성한 `data/job_requirements_*.json` 10개 전부 INSERT
+3. 시딩 후 `03_ERD.md` §2.5 weight 합계 검증 쿼리 실행 → 10개 Job Family 전부 UNIQUE=0.65, COMMON=0.35 확인
+4. FastAPI에서 Supabase client 연동, report 상태 저장
 
-```sql
--- 순서대로 실행
-1. CREATE TYPE report_status, job_family, evidence_type, match_level, gap_severity
-2. CREATE TABLE users
-3. CREATE TABLE reports
-4. CREATE TABLE career_histories
-5. CREATE TABLE career_evidences
-6. CREATE TABLE job_requirement_stats
-7. CREATE TABLE report_scores
-8. CREATE TABLE requirement_matches
-9. CREATE TABLE report_gaps
+### 완료 기준
+- [ ] `POST /reports` → DB 레코드 생성 확인
+- [ ] 엔진 완료 후 `reports.report_json` 저장 확인 (`reports.target_job_family` ENUM 10개 값 모두 INSERT 가능한지 확인)
+- [ ] `report_scores`(unique_total/common_total/core_penalty 컬럼 포함), `requirement_matches`(skill_group, confidence_total 포함), `report_gaps`(skill_group 포함) 정규화 저장 확인
+
+---
+
+## Day 20 — React (Form + Result)
+
+### 3개 페이지
+
 ```
-
-### 시딩
-
-```bash
-python scripts/seed_requirements.py
-# data/ 폴더의 5개 JSON → job_requirement_stats 테이블에 INSERT
+/             — Landing (10개 Job Family 그리드, HR/Data 샘플 미리보기)
+/report/new   — 입력 폼 (target_job_family select 10개 옵션, career_histories 동적 추가)
+/report/:id   — Generating(폴링) → Result(UNIQUE/COMMON 점수 분리 표시) → PDF 다운로드
 ```
 
 ### 완료 기준
-
-- [ ] Supabase Studio에서 9개 테이블 확인
-- [ ] `POST /reports` → DB에 레코드 생성 확인
-- [ ] 엔진 완료 후 `report_json` 저장 확인
-
----
-
-## Day 20 — React 3개 페이지
-
-### Landing (`/`)
-
-- 서비스 설명 + CTA 버튼
-- 지원 Job Family 5개 표시
-
-### Report Form (`/report/new`)
-
-```tsx
-// 동적 경력 추가
-const [careers, setCareers] = useState([defaultCareer]);
-const addCareer = () => setCareers([...careers, defaultCareer]);
-
-// 제출
-const handleSubmit = async () => {
-  const res = await api.createReport({ target_job_family, career_histories });
-  router.push(`/report/${res.report_id}?status=generating`);
-};
-```
-
-### Report Result (`/report/:id`)
-
-```tsx
-// 폴링
-useEffect(() => {
-  const poll = setInterval(async () => {
-    const res = await api.getReport(reportId);
-    if (res.status === "READY") {
-      setReport(res.report);
-      clearInterval(poll);
-    }
-  }, 3000);
-  return () => clearInterval(poll);
-}, [reportId]);
-```
-
-### 완료 기준
-
-- [ ] 3개 페이지 브라우저에서 정상 동작
-- [ ] Form 제출 → Generating 화면 → Result 화면 전환
+- [ ] Form 제출 → report_id 받음 → Generating 화면
+- [ ] 폴링으로 READY 전환 → Result 화면에 `summary.unique_score`/`common_score` 도넛 2개 렌더링
+- [ ] PDF 다운로드 버튼 동작
+- [ ] 10개 Job Family select 옵션이 `04_PAYLOAD_CONTRACT.md` ENUM과 정확히 일치
 
 ---
 
-## Day 21 — Full Stack 연결 + 통합 테스트
+## Day 21 — Bug Fix + Deploy
 
-### E2E 시나리오
+### 오전: Bug Fix
 
 ```
-1. 브라우저 /report/new 접속
-2. HR 선택, 경력 1개 입력, 제출
-3. /report/:id?status=generating 화면 → 폴링
-4. READY 전환 → 결과 페이지
-5. PDF 다운로드 버튼 클릭 → PDF 다운로드
+[ ] career_histories 1개 / 10개 엣지 케이스
+[ ] responsibilities 50자 최소값 검증
+[ ] LLM 실패 시 폴백 동작 확인 (09_TEXT_TEMPLATE_RULES.md §7)
+[ ] PDF 생성 실패 시 에러 응답 확인
+[ ] 10개 Job Family 중 HR/Data 외 나머지 8개도 최소 1회 생성 테스트 (job_requirements json만 다르므로 에러 시 즉시 발견 가능해야 함)
+[ ] CORS 설정
 ```
 
-### 완료 기준
-
-- [ ] 위 시나리오 오류 없이 완주
-- [ ] PDF 다운로드 성공
-- [ ] 생성 소요 시간 5분 이내
-
----
-
----
-
-# WEEK 4 — MVP 완성 + 배포
-
-**목표:** 실제 URL로 접근 가능한 MVP
-
----
-
-## Day 22 — 디자인 개선
-
-- 결과 페이지 점수 시각화 (Recharts 또는 Chart.js)
-- Skill Mapping progress bar
-- Gap severity 색상 구분 (CRITICAL=빨강, MAJOR=주황, MINOR=노랑)
-
----
-
-## Day 23 — PDF 고급화
-
-- 레이더 차트 (핵심 역량 5개)
-- Skill Mapping 바 차트
-- 13섹션 페이지 구분 및 목차
-- 표지 디자인 완성
-
----
-
-## Day 24 — 샘플 리포트 5개 생성
+### 오후: Deploy
 
 ```bash
-for family in HR Marketing Data Product Operations; do
-  python scripts/generate_sample.py --job-family $family
-done
-```
-
-Landing 페이지에 샘플 리포트 미리보기 추가.
-
----
-
-## Day 25 — 사람인 연동 (선택)
-
-- 사람인 공고 키워드 크롤링
-- `job_requirement_stats` 자동 업데이트 스크립트
-
-```bash
-python scripts/sync_job_postings.py --job-family HR --limit 50
-```
-
----
-
-## Day 26 — 버그 수정 + 엣지 케이스
-
-테스트 케이스:
-- 경력 1개 / 경력 10개
-- responsibilities 50자 최소값
-- LLM 실패 시 폴백 동작
-- PDF 생성 실패 시 재시도
-
----
-
-## Day 27 — 성능 + 보안
-
-```
-[ ] report_id UUID 추측 불가 확인
-[ ] expires_at 30일 만료 동작 확인
-[ ] PDF 생성 타임아웃 설정
-[ ] FastAPI 에러 핸들러 전체 커버
-[ ] CORS 설정 (프론트 도메인만 허용)
-```
-
----
-
-## Day 28 — 배포
-
-### Frontend → Vercel
-
-```bash
+# Frontend
 cd frontend && vercel --prod
+
+# Backend (render.yaml — playwright install chromium 빌드 커맨드 포함 필수)
 ```
-
-### Backend → Render
-
-```yaml
-# render.yaml
-services:
-  - type: web
-    name: careerfit-api
-    runtime: python
-    buildCommand: pip install -r requirements.txt && playwright install chromium
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-```
-
-### DB → Supabase
-
-- 이미 클라우드, 연결 문자열만 환경변수로 설정
 
 ### 환경변수 체크리스트
 
 ```
 SUPABASE_URL
 SUPABASE_SERVICE_KEY
-OPENAI_API_KEY (optional, LLM 폴백)
-PDF_OUTPUT_DIR
-FRONTEND_URL (CORS용)
+OPENAI_API_KEY (optional)
+FRONTEND_URL (CORS)
 ```
 
-### 완료 기준
-
-- [ ] `https://careerfit.kr` (또는 Vercel URL) 접속 가능
-- [ ] 리포트 생성 → PDF 다운로드 전체 플로우 성공
-- [ ] 5분 이내 완료
-
----
-
----
-
-# 체크리스트 요약
-
-## Week 1 마감 기준
-
-```
-[ ] sample_input.json 확정
-[ ] sample_report.json 뼈대 확정
-[ ] Skill Taxonomy 75개 이상
-[ ] Evidence Rules EXPLICIT 50개 이상
-[ ] Requirement JSON 5개 (weight 합계 = 1.0)
-[ ] Engine 7개 파일 인터페이스 작성 완료
-```
-
-## Week 2 마감 기준
-
-```
-[ ] sample_input.json → sample_report.json E2E 성공
-[ ] 5개 Job Family 전부 통과
-[ ] 결정론적 검증 (동일 입력 = 동일 점수)
-[ ] sample_report.pdf 생성 성공
-```
-
-## Week 3 마감 기준
-
-```
-[ ] POST /reports → DB 저장 → 엔진 실행 → READY 전환
-[ ] 브라우저에서 결과 페이지 열람
-[ ] PDF 다운로드 성공
-```
-
-## Week 4 마감 기준
+### Week 3 마감 = 프로젝트 완료 체크리스트
 
 ```
 [ ] 실제 URL 접속 가능
-[ ] 샘플 리포트 5개 Landing에 표시
-[ ] 생성 소요 5분 이내
-[ ] 오류율 5% 미만
+[ ] HR/Data 둘 다 리포트 생성 → PDF 다운로드 성공
+[ ] 생성 소요 시간 5분 이내
+[ ] 동일 입력 재실행 시 동일 점수 (배포 환경에서도 재검증)
+[ ] 10개 Job Family select에서 임의의 항목 선택 시 에러 없이 리포트 생성 (job_requirements json 10종이 모두 유효함을 실증)
 ```
+
+**이 시점 체감 완성도: 100% (V1 MVP, 10 Job Families)**
 
 ---
 
-## 핵심 원칙 (매일 확인)
+---
+
+# 부록 A: v2 → v3 변경 요약
+
+| 항목 | v2 | v3 |
+|------|----|----|
+| Job Family | 2개 (HR, Data) | **10개**, weight는 알고리즘으로 자동 배분 |
+| Skill Taxonomy | ~39개 (HR+Data 전용) | **~79개** (공통 20 + 고유 40 + 보조 21) |
+| weight 정의 방식 | 사람이 9개 직접 입력 | **`core_skill_keys` 4~5개만 입력 → 자동 배분 (65/35)** |
+| Report Schema 신규 필드 | - | `skill_group`, `confidence_total`, `unique_score`, `common_score`, `unique_total`, `common_total`, `core_penalty` |
+| reportSections | 13개 | **12개** (marketAnalysis 제외, V1.1로) |
+| Week 1 산출물 상태 | 작성 예정 | **00~12 중 12개 문서 이미 완료** |
+| Day 1~5 | Vision~Evidence Rules 작성 | **완료됨 — 이 로드맵에서 제외** |
+| Day 6 (신규) | - | 10개 Job Family requirement DB 생성 (알고리즘 1회 실행) |
+
+---
+
+# 부록 B: 매일 자가 점검
 
 ```
-1. 오늘 report.json이 더 완성됐는가?
-2. 오늘 추가한 코드가 결정론적인가?
-3. original_text를 수정한 코드가 없는가?
-4. LLM 없이도 리포트가 생성되는가?
-5. React를 열기 전에 Engine이 완성됐는가?
+1. 오늘 작업이 04_PAYLOAD_CONTRACT.md 또는 05_REPORT_SCHEMA.md를 건드리는가?
+   → 그렇다면 문서부터 수정했는가? (.cursorrules Rule 10)
+2. sample_report_hr.json과 sample_report_data.json의 구조가 여전히 동일한가?
+3. 오늘 추가한 코드가 결정론적인가? (06_SCORING_RULES.md §10)
+4. original_text를 수정한 코드가 없는가?
+5. UNIQUE/COMMON weight 합이 65/35를 유지하는가?
+6. 새 Job Family(11번째 이상)를 추가하고 싶은 유혹이 들지 않았는가? (V1.1로 미룰 것)
 ```

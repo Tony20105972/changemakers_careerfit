@@ -1,312 +1,212 @@
 # 13 — Development Roadmap (v3)
 
-> **현재 상태:** `docs/00`~`12` (13개 중 문서 12개) 작성 완료.  
-> Job Family **10개** (HR/Marketing/Data/Product/Operations/Sales/Design/Finance/Engineering/Customer Success),  
-> weight 자동 배분(UNIQUE 65% / COMMON 35%, `06_SCORING_RULES.md` §2) 구조 확정.
+> **현재 상태:**  
+> - `docs/00~13` (14개) 전체 v3 블렌딩 체계로 재작성 완료  
+> - `data/skill_taxonomy.json` (80개), `data/job_requirements_*.json` × 10 생성 완료 (Day 6 산출물)  
+> - `scripts/generate_requirements.py` — weight 자동 배분 + 검증 완료 (10/10 통과)  
 >
-> 이 로드맵은 **Week 1 잔여 작업(Day 6~7) + Week 2 + Week 3**를 다룬다.  
-> Day 1~5에 해당하는 작업(Vision/PRD/Payload/Schema/ERD/Scoring/Taxonomy/Evidence)은 이미 완료되었다.
+> **다음 작업:** Day 7 (sample_input/report 손작성 — HR dominant + MIXED 2종)
 
 ---
 
-## 전체 요약
+# WEEK 1 (잔여) — Day 7
+
+## Day 7 — Sample Input + Sample Report (두 케이스 손작성)
+
+### 두 케이스를 손으로 작성하는 이유
+
+v3에서 블렌딩 결과는 입력마다 다르다. Week 2 엔진 검증을 위해  
+**"정답 fixture" 역할을 하는 두 케이스**가 필요하다:
+
+| 케이스 | 파일명 | 특징 |
+|--------|--------|------|
+| HR dominant | `output/sample_input_hr_dominant.json` | user_vector가 HR과 높은 유사도, blend_display_mode=SINGLE |
+| MIXED | `output/sample_input_mixed.json` | Marketing + Data 혼합, blend_display_mode=MIXED |
+
+### 작업 순서
 
 ```
-Week 1 — Architecture Week  (Day 1~5 완료, Day 6~7 잔여)
-  완료: 00~09 문서 (Vision, PRD, User Flow, ERD, Payload, Report Schema,
-                    Scoring Rules, Skill Taxonomy, Evidence Rules)
-  잔여: data/job_requirements_*.json 10종 생성 + sample_input/report.json (HR, Data)
-
-Week 2 — Engine Week
-  목표: 6개 엔진 모듈 → report.json 자동 생성 (HR, Data로 검증)
-
-Week 3 — Product Week
-  목표: Template → HTML → PDF → API → DB → React → Deploy
-```
-
----
-
----
-
-# WEEK 1 (잔여) — Requirement DB + Fixture 작성
-
----
-
-## Day 6 — Job Family Requirement DB 생성 (10개)
-
-### 작업: `data/job_requirements_*.json` × 10
-
-`06_SCORING_RULES.md` §2.2 `allocate_weights()` 알고리즘을 실행하는 시딩 스크립트를 작성한다.
-
-```python
-# scripts/generate_requirements.py
-import json
-from pathlib import Path
-
-JOB_FAMILIES = {
-    "hr": {
-        "core_skill_keys": ["recruiting", "training_and_onboarding", "labor_law", "payroll"],
-        "common_skill_keys": ["communication", "stakeholder_management", "documentation",
-                               "performance_management", "employee_relations"],
-        "is_core_overrides": {"recruiting": True, "training_and_onboarding": True, "labor_law": True},
-    },
-    "marketing": {
-        "core_skill_keys": ["campaign_management", "seo_sem", "content_marketing", "brand_management"],
-        "common_skill_keys": ["communication", "data_analysis", "presentation",
-                               "social_media", "marketing_analytics"],
-        "is_core_overrides": {"campaign_management": True, "seo_sem": True},
-    },
-    "data": {
-        "core_skill_keys": ["sql", "python", "data_visualization", "statistics"],
-        "common_skill_keys": ["communication", "documentation", "data_analysis",
-                               "ab_testing", "presentation"],
-        "is_core_overrides": {"sql": True, "python": True},
-    },
-    "product": {
-        "core_skill_keys": ["product_planning", "roadmap_management", "user_research", "ux_sense"],
-        "common_skill_keys": ["communication", "stakeholder_management", "data_analysis",
-                               "sprint_management", "competitive_analysis"],
-        "is_core_overrides": {"product_planning": True, "roadmap_management": True},
-    },
-    "operations": {
-        "core_skill_keys": ["process_improvement", "vendor_management", "operations_management", "logistics"],
-        "common_skill_keys": ["process_design", "vendor_coordination", "cost_management",
-                               "quality_control", "coordination"],
-        "is_core_overrides": {"process_improvement": True, "operations_management": True},
-    },
-    "sales": {
-        "core_skill_keys": ["lead_generation", "account_management", "negotiation", "crm_management"],
-        "common_skill_keys": ["communication", "negotiation_basic", "crossfunctional_collab",
-                               "forecasting", "pipeline_management"],
-        "is_core_overrides": {"lead_generation": True, "account_management": True},
-    },
-    "design": {
-        "core_skill_keys": ["ui_design", "prototyping", "design_systems", "user_research"],
-        "common_skill_keys": ["communication", "stakeholder_management", "wireframing",
-                               "accessibility", "presentation"],
-        "is_core_overrides": {"ui_design": True, "prototyping": True},
-    },
-    "finance": {
-        "core_skill_keys": ["financial_modeling", "budgeting_advanced", "accounting", "financial_reporting"],
-        "common_skill_keys": ["excel", "reporting", "budgeting", "cost_management", "tax_compliance"],
-        "is_core_overrides": {"financial_modeling": True, "accounting": True},
-    },
-    "engineering": {
-        "core_skill_keys": ["software_development", "code_review", "system_design", "debugging"],
-        "common_skill_keys": ["documentation", "problem_solving", "api_design",
-                               "testing_qa", "crossfunctional_collab"],
-        "is_core_overrides": {"software_development": True, "system_design": True},
-    },
-    "customer_success": {
-        "core_skill_keys": ["customer_onboarding", "churn_management", "support_ticketing", "account_health"],
-        "common_skill_keys": ["communication", "stakeholder_management", "customer_feedback_analysis",
-                               "renewal_management", "data_analysis"],
-        "is_core_overrides": {"customer_onboarding": True, "churn_management": True},
-    },
-}
-
-# label_ko, description은 07_SKILL_TAXONOMY.md에서 조회 (생략, 실제로는 lookup table 사용)
-
-for family, config in JOB_FAMILIES.items():
-    requirements = allocate_weights(config["core_skill_keys"], config["common_skill_keys"])
-    for req in requirements:
-        req.is_core = config["is_core_overrides"].get(req.requirement_key, False)
-    validate_job_family_weights(requirements)  # 06_SCORING_RULES.md §2.4
-
-    output_path = Path(f"data/job_requirements_{family}.json")
-    output_path.write_text(json.dumps([r.dict() for r in requirements], ensure_ascii=False, indent=2))
-    print(f"{family}: UNIQUE={sum(r.weight for r in requirements if r.skill_group=='UNIQUE')}, "
-          f"COMMON={sum(r.weight for r in requirements if r.skill_group=='COMMON')}")
+1. sample_input 작성 (career_histories + target_priority_text)
+2. 08_EVIDENCE_RULES.md로 evidences[] 수작업 추출
+3. user_vector 계산 ({skill_key: confidence_total})
+4. 06_SCORING_RULES.md §2.5 알고리즘으로 profile_blend 수계산
+5. blended_requirements 도출 (renormalize_to_65_35)
+6. matchLevel 결정 (06_SCORING_RULES.md §4)
+7. 점수 계산 (unique_total, common_total, core_penalty, total)
+8. 05_REPORT_SCHEMA.md 12개 top-level key 전부 실제 값으로 채움
 ```
 
 ### 완료 기준
 
-- [ ] `data/job_requirements_*.json` 10개 생성
-- [ ] 10개 전부 `validate_job_family_weights()` 통과 (UNIQUE=0.65, COMMON=0.35, ±0.001)
-- [ ] `product`와 `design`의 `user_research` 중복 지정 확인 (07_SKILL_TAXONOMY.md §0 원칙 3 — 의도된 설계)
-- [ ] `data/gap_recommendations.json` — 79개 skill_key 전체에 대한 추천 문구 작성 (08_EVIDENCE_RULES.md 커버리지와 1:1)
-
----
-
-## Day 7 — Sample Input + Sample Report (HR, Data — 손작성)
-
-### 오전: `output/sample_input_hr.json`, `output/sample_input_data.json`
-
-각 Job Family당 경력 2개, `08_EVIDENCE_RULES.md`의 EXPLICIT/INFERRED/ACHIEVED 키워드가  
-풍부하게 들어간 실제와 같은 텍스트로 작성한다. (이전 대화에서 작성한 `sample_input_hr.json` 재사용 가능)
-
-### 오후: `output/sample_report_hr.json`, `output/sample_report_data.json` — **손으로 직접 작성**
-
-> Week 1의 진짜 핵심 산출물. 엔진 없이 사람이 직접 채운 "정답".
-
-작업 순서:
 ```
-1. sample_input_*.json의 responsibilities/achievements를 읽는다
-2. 08_EVIDENCE_RULES.md 매핑표로 evidences[] 직접 추출 (confidence_total 계산 포함)
-3. 06_SCORING_RULES.md §4 알고리즘으로 matchLevel 수작업 결정
-4. job_requirements_hr.json / job_requirements_data.json의 weight로 점수 계산
-   (06_SCORING_RULES.md §5 예시와 동일한 방식 — unique_total/common_total/core_penalty/total)
-5. 05_REPORT_SCHEMA.md 12개 top-level key 전부 값 채우기
+[ ] sample_input_hr_dominant.json + sample_report_hr_dominant.json
+    - profile_blend: {hr: >= 0.7} (SINGLE 케이스)
+    - meta.confidence_level: HIGH
+    - 12개 top-level key 전부 실제 값, null 없음
+
+[ ] sample_input_mixed.json + sample_report_mixed.json
+    - profile_blend: 최댓값 < 0.7 (MIXED 케이스, 예: {marketing: 0.55, data: 0.45})
+    - summary.blend_display_mode: "MIXED"
+    - blend_description: "MIXED_2" 템플릿 적용
+
+[ ] 두 report의 key 구조 동일 (05_REPORT_SCHEMA.md 부록 검증 스크립트 통과)
+[ ] unique_total + common_total == total (각 케이스)
+[ ] Σ profile_blend == 1.0 (각 케이스)
+[ ] Σ blended_requirements weight (UNIQUE) == 0.65 (각 케이스)
+[ ] Σ blended_requirements weight (COMMON) == 0.35 (각 케이스)
 ```
-
-### 완료 기준
-
-- [ ] `sample_input_hr.json`, `sample_input_data.json` 완성
-- [ ] `sample_report_hr.json`, `sample_report_data.json` — 12개 key 전부 실제 값, null 없음
-- [ ] 두 sample_report에 **`05_REPORT_SCHEMA.md` 부록의 구조 검증 스크립트** 실행 → 키 집합 100% 동일
-- [ ] `sample_report_hr.json.scores.total == unique_total + common_total` 등 06_SCORING_RULES.md §10 불변규칙 10개 전부 수동 검증
-
-### Week 1 최종 마감 체크리스트
-
-```
-[ ] docs/00~12 (13개 중 12개) 확정          ← 이미 완료
-[ ] data/job_requirements_*.json × 10       ← Day 6
-[ ] data/gap_recommendations.json (79 skills) ← Day 6
-[ ] sample_input_hr/data.json                ← Day 7
-[ ] sample_report_hr/data.json (손작성 정답)  ← Day 7
-[ ] 구조 통일성 검증 통과                     ← Day 7
-```
-
-**이 시점 체감 완성도: 약 35%** (문서 작업이 v2에서 더 무거워진 만큼 기준 상향)
-
----
 
 ---
 
 # WEEK 2 — Engine Week
 
-**목표:** `sample_input_*.json` → (엔진) → Day 7의 `sample_report_*.json`과 거의 일치하는 결과를 코드가 자동 생성한다.
-
-**버퍼 전략:** Day 14는 통합 검증일. 막힐 경우 Week 3 Day 15(Text Template, 코드량 적음)와 순서 교체 가능.
+**목표:** `sample_input_*.json` → (엔진) → Day 7의 sample_report와 구조 일치하는 결과 자동 생성.  
+**v3 추가:** `blend_profiles.py` (블렌딩 코어)를 Day 8에 먼저 완성하고, 나머지 모듈이 임포트.
 
 ---
 
-## Day 8 — Evidence Extractor
+## Day 8 — blend_profiles.py (v3 핵심 신규)
+
+### 작업: `scripts/blend_profiles.py`
+
+`06_SCORING_RULES.md` §2.5의 모든 함수를 구현한다.
+
+```python
+# 구현 대상 함수 (06_SCORING_RULES.md §2.5에서 그대로 복사 후 구현)
+cosine_similarity(vec_a, vec_b) -> float
+compute_blend_weights(user_vector, profile_pool) -> dict[str, float]
+blend_requirements(user_vector, profile_pool) -> tuple[dict, list[Requirement]]
+renormalize_to_65_35(blended, skill_groups, source_profiles) -> list[Requirement]
+_fix_rounding(requirements, group, target) -> None
+validate_blended_weights(requirements) -> None
+
+# 추가 구현
+determine_blend_display_mode(profile_blend) -> str  # 06_SCORING_RULES.md §2.7
+determine_confidence_level(user_vector) -> str       # 06_SCORING_RULES.md §2.6
+```
+
+### 단위 테스트 (수작업 케이스로 검증)
+
+```bash
+python scripts/blend_profiles.py \
+  --user_vector '{"recruiting": 1.9, "training_and_onboarding": 1.85, "payroll": 1.9}' \
+  --profile_pool data/
+
+# 예상 출력:
+# profile_blend = {"hr": X, "operations": Y, ...}
+# blend_display_mode = SINGLE (if hr >= 0.7)
+# Σ blended weight (UNIQUE) = 0.65 ✓
+# Σ blended weight (COMMON) = 0.35 ✓
+```
+
+### 완료 기준
+
+```
+[ ] cosine_similarity — 동일 입력 3회 동일 결과 (결정론 확인)
+[ ] validate_blended_weights — HR dominant 케이스 통과
+[ ] validate_blended_weights — MIXED 케이스 통과
+[ ] compute_blend_weights — 모든 유사도가 0인 입력에서 ValueError (BLOCKED 케이스 확인)
+[ ] renormalize_to_65_35 — _fix_rounding 후 합계가 0.6500, 0.3500 (±0.001)
+[ ] sample_report_hr_dominant.json의 profile_blend와 수작업 계산값 일치
+```
+
+---
+
+## Day 9 — Evidence Extractor (듀얼 소스)
 
 ### 작업: `engine/evidence_extractor.py`
 
 ```python
-def extract_evidences(career_history: CareerHistory) -> list[Evidence]:
-    """08_EVIDENCE_RULES.md §6 의사코드 그대로 구현. 79개 skill_key 전체 매핑 dict 로드."""
-```
-
-### 구현 순서
-1. `08_EVIDENCE_RULES.md` §3~5의 EXPLICIT/INFERRED/ACHIEVED 매핑을 `data/evidence_rules.json`으로 분리
-2. 문장 분리 (`.` `\n` 기준)
-3. 키워드 매칭 → Evidence 생성 (§6 의사코드)
-4. `confidence_score < 0.5` 필터링, 중복 제거 (§7 불변규칙)
-
-### 검증
-```bash
-python scripts/test_engine.py --step evidence --input output/sample_input_hr.json
-# diff 비교: 추출 결과 vs sample_report_hr.json.evidenceMapping
+def extract_evidences_from_all_sources(
+    career_histories: list[CareerHistory],
+    target_priority_text: str
+) -> list[Evidence]:
+    """08_EVIDENCE_RULES.md §6 의사코드 구현. 듀얼 소스."""
 ```
 
 ### 완료 기준
-- [ ] `sample_input_hr.json` → evidences[] 최소 8개 추출
-- [ ] `sample_report_hr.json.evidenceMapping`과 skill_key 기준 80% 이상 일치
-- [ ] `sample_input_data.json`도 동일 테스트 통과
-- [ ] EXPLICIT+ACHIEVED 동시 존재 케이스(예: recruiting)에서 둘 다 보존되는지 확인 (중복 제거 로직이 evidence_type 다른 건 살리는지)
+
+```
+[ ] career_histories에서 EXPLICIT/INFERRED/ACHIEVED 추출
+[ ] target_priority_text에서 EXPLICIT/INFERRED만 추출 (ACHIEVED 제외)
+[ ] 동일 (skill_key, original_text, evidence_type) 중복 제거
+[ ] career_history_id=NULL인 Evidence의 source="target_priority_text" 확인
+[ ] sample_input_hr_dominant → evidences 최소 8개 (target_priority_text 기여분 포함)
+[ ] sample_input_mixed → evidences 최소 6개 (Marketing+Data 혼합 신호)
+```
 
 ---
 
-## Day 9 — Requirement Matching + confidence_total
+## Day 10 — Requirement Matcher + Scoring (블렌딩 기반)
 
-### 작업: `engine/requirement_matcher.py`
+### 작업: `engine/requirement_matcher.py`, `engine/scoring_engine.py`
 
 ```python
-def match_requirements(
-    evidences: list[Evidence],
-    requirements: list[Requirement]  # data/job_requirements_<family>.json에서 로드
-) -> list[RequirementMatch]:
+def match_requirements(evidences, blended_requirements) -> list[RequirementMatch]:
     """06_SCORING_RULES.md §4 determine_match_level() 사용.
-       반환값에 confidence_total 포함 (04_PAYLOAD_CONTRACT.md §2 Algorithm Response 필드)."""
+       blended_requirements의 weight(블렌딩 결과)를 그대로 사용."""
+
+def calculate_score(matches, blended_requirements) -> ScoreResult:
+    """06_SCORING_RULES.md §1, §6 구현. 블렌딩 후에도 65/35 불변."""
 ```
 
-`06_SCORING_RULES.md` §4의 `determine_match_level()`을 그대로 구현한다 (이미 알고리즘 확정됨 — 신규 작성 아님).
-
 ### 완료 기준
-- [ ] HR 9개 requirement 전부 matchLevel + confidence_total 산출
-- [ ] `06_SCORING_RULES.md` §5 예시 표(recruiting=FULL/1.9, labor_law=NONE/0.0 등)와 일치
-- [ ] `sample_report_hr.json.skillMapping`과 매칭 결과 비교 → 불일치 시 둘 중 하나 수정
+
+```
+[ ] HR dominant: unique_total + common_total == total (±0.1)
+[ ] MIXED: unique_total ≤ 65, common_total ≤ 35
+[ ] 3회 실행 동일 점수 (결정론)
+[ ] 06_SCORING_RULES.md §10 불변규칙 1~12 assert 통과
+[ ] confidence_level = BLOCKED 시 match_requirements 호출 전 차단 확인
+```
 
 ---
 
-## Day 10 — Scoring Engine (UNIQUE/COMMON 분리 + Core Penalty)
+## Day 11 — Gap Analyzer + Strength Selector
 
-### 작업: `engine/scoring_engine.py`
+### 작업: `engine/gap_analyzer.py`, `engine/strength_selector.py`
 
 ```python
-def calculate_score(matches: list[RequirementMatch], requirements: list[Requirement]) -> ScoreResult:
-    """
-    06_SCORING_RULES.md §1, §6 구현.
-    - unique_total, common_total 분리 계산
-    - apply_core_penalty() 적용 (penalty는 unique_total에서만 차감)
-    - calculate_final_scores()로 최종 total 산출
-    """
-```
+def analyze_gaps(matches, blended_requirements) -> list[Gap]:
+    """06_SCORING_RULES.md §8. is_core 전파 규칙(source_profiles 중 하나라도 true면 true) 적용."""
 
-### 결정론적 검증 (필수)
-```bash
-for i in 1 2 3; do
-  python scripts/test_engine.py --step score --input output/sample_input_hr.json | grep -E "total|unique|common|penalty"
-done
-# 3회 동일 값 확인
+def select_strengths(matches, blended_requirements) -> list[Strength]:
+    """06_SCORING_RULES.md §9. UNIQUE 우선."""
 ```
 
 ### 완료 기준
-- [ ] HR/Data 각각 `total`, `unique_total`, `common_total`, `core_penalty` 산출
-- [ ] `06_SCORING_RULES.md` §5 예시(total=63.0)와 동일한 입력으로 동일 결과 재현
-- [ ] 3회 실행 동일 점수
-- [ ] §10 불변규칙 1~7 코드 검증 (assert)
+
+```
+[ ] MIXED 케이스에서 source_profiles=["hr", "operations"] 복합 requirement의 gap severity 정확
+[ ] is_core 전파: HR에서 is_core=true였던 recruiting이 MIXED 블렌딩 후에도 is_core=true
+[ ] COMMON + CRITICAL 조합 없음 (불변규칙 확인)
+[ ] strengths rank 1, 2가 가능하면 UNIQUE
+```
 
 ---
 
-## Day 11 — Gap Analyzer (skill_group 포함)
+## Day 12 — Text Template Engine + Recommendation
 
-### 작업: `engine/gap_analyzer.py`
+### 작업: `engine/text_template.py`
+
+`09_TEXT_TEMPLATE_RULES.md` §1~7 전체 구현:
 
 ```python
-def analyze_gaps(matches: list[RequirementMatch], requirements: list[Requirement]) -> list[Gap]:
-    """
-    06_SCORING_RULES.md §8 classify_gap_severity() + assign_priority_order() 구현.
-    report_gaps.skill_group 컬럼(03_ERD.md §2.8)에 대응하는 필드 포함.
-    """
+build_blend_display(profile_blend, blend_display_mode, profile_label_lookup) -> str
+build_blend_description(profile_blend, blend_display_mode, profile_label_lookup) -> str
+select_split_template(unique_score, common_score) -> str
+# strengths/gaps/recommendations 템플릿 전부 포함
+polish_text(template_text) -> str  # LLM 폴백 구조 포함
 ```
 
 ### 완료 기준
-- [ ] gaps[] 생성, `skill_group`(UNIQUE/COMMON) 포함, priority_order 정렬 확인
-- [ ] `data/gap_recommendations.json`(79개) 전체에서 recommendation 텍스트 조회 성공
-- [ ] `sample_report_hr.json.gaps`와 severity 분류 일치 확인
-- [ ] COMMON + CRITICAL 조합이 발생하지 않는지 확인 (09_TEXT_TEMPLATE_RULES.md §4 주석)
 
----
-
-## Day 12 — Recommendation Engine + Strength Selector
-
-### 작업 1: `engine/recommendation_engine.py`
-
-```python
-def generate_recommendations(gaps: list[Gap], unique_score: float, job_family: str) -> Recommendations:
-    """09_TEXT_TEMPLATE_RULES.md §5 select_mid_term_template() 사용
-       (unique_score/65 >= 0.6 기준으로 high/low 템플릿 분기)"""
-
-def generate_roadmap(gaps: list[Gap]) -> Roadmap:
-    """3 phase 고정 (05_REPORT_SCHEMA.md §11)"""
 ```
-
-### 작업 2: `engine/strength_selector.py`
-
-```python
-def select_strengths(matches, requirements) -> list[Strength]:
-    """06_SCORING_RULES.md §9 select_strengths() 구현.
-       FULL/STRONG만 후보, weighted_score 내림차순, 동점시 UNIQUE 우선."""
+[ ] HR dominant → blend_description: "SINGLE" 템플릿
+[ ] MIXED → blend_description: "MIXED_2" 템플릿 (2개 프로필 이름 + %)
+[ ] LLM 없이 모든 텍스트 필드 채워짐 (폴백 동작)
+[ ] priority_clause: target_priority_text 유래 강점에만 추가
 ```
-
-### 완료 기준
-- [ ] recommendations.short_term ≥2, mid_term ≥1
-- [ ] roadmap 3 phase 전부 생성
-- [ ] strengths[] 3개, rank 1·2가 가능한 UNIQUE인지 확인 (sample_report와 비교)
 
 ---
 
@@ -315,132 +215,100 @@ def select_strengths(matches, requirements) -> list[Strength]:
 ### 작업: `engine/report_builder.py`
 
 ```python
-def build_report(normalized_input, evidences, matches, score, gaps, strengths, recommendations, roadmap) -> dict:
+def build_report(
+    report_id, target_priority_text,
+    evidences, user_vector, profile_blend, blended_requirements,
+    matches, score, gaps, strengths, recommendations, roadmap,
+    weight_source="MANUAL_V1"
+) -> dict:
     return {
-        "meta": build_meta(report_id, job_family, engine_version="2.0.0"),
-        "summary": build_summary(score, matches, gaps, strengths),  # unique_score/common_score 포함
-        "careerProfile": build_career_profile(normalized_input, evidences),
-        "targetJobAnalysis": build_target_job(requirements, matches),  # unique/common_requirements 분리
-        "skillMapping": build_skill_mapping(matches, requirements),
+        "meta": build_meta(report_id, profile_blend, weight_source),
+        "summary": build_summary(score, matches, profile_blend, ...),
+        "careerProfile": build_career_profile(career_histories, evidences),
+        "targetJobAnalysis": build_target_job(profile_blend, blended_requirements, matches),
+        "skillMapping": build_skill_mapping(matches, blended_requirements),
         "evidenceMapping": build_evidence_mapping(evidences),
-        "scores": score.dict(),  # unique_total, common_total, core_penalty 포함
+        "scores": score.dict(),
         "strengths": [s.dict() for s in strengths],
         "gaps": [g.dict() for g in gaps],
         "recommendations": recommendations.dict(),
         "roadmap": roadmap.dict(),
-        "reportSections": DEFAULT_12_SECTIONS  # 10_PDF_TEMPLATE_SPEC.md §2
+        "reportSections": DEFAULT_12_SECTIONS,
     }
 ```
 
 ### 완료 기준
-- [ ] `python scripts/test_engine.py --input output/sample_input_hr.json --output output/generated_report_hr.json` 실행 성공
-- [ ] `generated_report_hr.json`이 `05_REPORT_SCHEMA.md`의 12개 top-level key 전부 포함, null 없음
-- [ ] `summary.unique_score + summary.common_score == summary.total_score`
+
+```
+[ ] HR dominant + MIXED 각각 generated_report.json 자동 생성 성공
+[ ] meta.profile_blend 포함, Σ == 1.0
+[ ] targetJobAnalysis.unique_requirements[].source_profiles 포함
+[ ] evidenceMapping에 source="target_priority_text" 항목 포함
+[ ] summary.blend_description, blend_display_mode 정확
+```
 
 ---
 
-## Day 14 — 통합 검증 (버퍼 데이)
+## Day 14 — 통합 검증 (버퍼)
 
-### E2E 테스트
+### E2E 검증
 
 ```bash
-for family in hr data; do
+for case in hr_dominant mixed; do
   python scripts/test_engine.py \
-    --input output/sample_input_${family}.json \
-    --output output/generated_report_${family}.json
+    --input output/sample_input_${case}.json \
+    --output output/generated_report_${case}.json
 done
 ```
 
 ### 검증 체크리스트
 
 ```
-[ ] 2개 Job Family 전부 generated_report 생성 성공
-[ ] generated_report.json 구조(key) == sample_report.json 구조(key) — 05_REPORT_SCHEMA.md 부록 스크립트로 검증
-[ ] generated_report_hr.json 구조 == generated_report_data.json 구조 (Job Family 무관 통일성)
-[ ] 0 < total_score < 100, 0 <= unique_total <= 65, 0 <= common_total <= 35
-[ ] evidences ≥ 5개, gaps ≥ 1개, recommendations ≥ 2개
-[ ] 3회 실행 동일 결과 (결정론적)
-[ ] 06_SCORING_RULES.md §10 불변규칙 10개 전부 통과
-[ ] LLM 없이 완성 (이 시점에 LLM 코드 없음 — 자연히 충족)
+[ ] 2개 케이스 generated_report 생성 성공
+[ ] generated_report 구조 == sample_report 구조 (05_REPORT_SCHEMA.md 부록 스크립트)
+[ ] HR dominant: blend_display_mode = SINGLE
+[ ] MIXED: blend_display_mode = MIXED, blend_description에 2개 프로필 이름
+[ ] 06_SCORING_RULES.md §10 불변규칙 1~12 전부 assert 통과
+[ ] 3회 실행 동일 결과 (결정론, 블렌딩 포함)
+[ ] LLM 없이 완성 (이 시점 LLM 연동 없음)
+[ ] profile_blend Σ == 1.0 (각 케이스)
+[ ] blended UNIQUE Σ == 0.65, COMMON Σ == 0.35 (각 케이스)
+[ ] (선택) 나머지 8개 좌표축 조합으로 임의 입력 생성 후 에러 없이 report 생성 확인
 ```
 
 ### 버퍼 규칙
-- 위 체크리스트가 Day 14 안에 끝나면 → Week 3 Day 15(Text Template) 선작업 시작
-- 끝나지 않으면 → Day 15를 통합 검증 마무리로 쓰고, Day 21(Deploy)은 고정한 채 Day 20(React 디자인 다듬기)을 축소해 흡수
 
-### Week 2 마감 체크리스트
-
-```
-[ ] sample_input_*.json → generated_report_*.json 자동 생성 파이프라인 완성
-[ ] 결정론적 검증 통과
-[ ] HR, Data 2개 Job Family 모두 통과
-[ ] (선택) 나머지 8개 Job Family도 job_requirements_*.json만 바꿔 끼워서 generated_report 생성 시도
-    → 에러 없이 생성되면 "Structure-Once, Scale-Many" 원칙이 코드 레벨에서도 검증된 것
-```
-
-**이 시점 체감 완성도: 약 65%**
-
----
+- Day 14 안에 완료 → Day 15(Text Template) 선작업
+- 완료 안 되면 → Day 20(React 디자인 마감) 축소해 흡수
 
 ---
 
 # WEEK 3 — Product Week
 
-**목표:** 사용자 입력 → Report JSON → PDF → 웹 다운로드 전체 흐름이 실제 URL에서 동작한다.
-
----
-
-## Day 15 — Text Template Engine
-
-### 작업: `engine/text_template.py`
-
-`09_TEXT_TEMPLATE_RULES.md` §1~6 전체 구현:
-
-```python
-SUMMARY_TEMPLATES = {...}          # §1
-SCORE_SPLIT_TEMPLATES = {...}      # §2 (v2 신규 — unique/common 분리 서술)
-STRENGTH_HEADLINE_TEMPLATES = {...}# §3
-GAP_HEADLINE_TEMPLATES = {...}     # §4
-RECOMMENDATION_TEMPLATES = {...}   # §5
-CONCLUSION_TEMPLATES = {...}       # §6
-
-def polish_text(template_text: str) -> str:
-    try:
-        return llm_polish(template_text)
-    except Exception:
-        return template_text  # 폴백 (§7)
-```
-
-### 완료 기준
-- [ ] LLM 없이 `generated_report_*.json`의 모든 텍스트 필드(`summary.one_line`, `strengths[].headline/detail`, `gaps[].headline/detail`, `recommendations`, conclusion) 채워짐
-- [ ] `select_split_template()`(§2)이 HR과 Data 양쪽에서 정상 동작 — unique_ratio/common_ratio 기준 4분류 중 올바른 템플릿 선택
-- [ ] LLM 폴백 구조 작성 (실제 LLM 연동은 선택)
-
----
-
-## Day 16 — HTML Renderer (12 섹션 + UNIQUE/COMMON 시각화)
-
-### 작업: `10_PDF_TEMPLATE_SPEC.md` §4 템플릿 구조 그대로 생성
+## Day 15 — HTML Renderer (블렌딩 시각화 포함)
 
 ```
 backend/pdf/templates/
 ├── report.html.j2
-├── partials/  (12개 — cover ~ final_assessment)
-└── static/report.css  (--color-unique, --color-common 등 CSS 변수, §3)
+├── partials/
+│   ├── summary.html.j2      ← blend_description 박스 + 수평 막대 (CSS width %)
+│   ├── target_job.html.j2   ← profile_blend 막대 + source_profiles 배지 [HR][Ops]
+│   └── (나머지 10개)
+└── static/report.css        ← --color-blend-1/2/3, --color-source-badge 추가
 ```
 
-`summary.html.j2`에 도넛 차트 2개(unique_score/65, common_score/35), `target_job.html.j2`에 2개 테이블(UNIQUE/COMMON 헤더 색상 구분) 구현.
-
 ### 완료 기준
-- [ ] `output/sample_report_hr.html` 생성, 브라우저에서 12섹션 확인
-- [ ] `sample_report_data.html`도 동일 템플릿으로 정상 렌더링 (구조 통일성 재확인)
-- [ ] UNIQUE 배지(#2B6CB0)와 COMMON 배지(#90CDF4)가 Section 3~10에서 일관되게 표시되는지 확인
+
+```
+[ ] output/sample_report_hr_dominant.html — Section 2에 SINGLE 블렌딩 박스
+[ ] output/sample_report_mixed.html — Section 2에 MIXED 블렌딩 박스 (막대 2개)
+[ ] Section 4: source_profiles 배지 [HR], [Ops] 확인
+[ ] 흑백 출력 시에도 UNIQUE/COMMON 텍스트 라벨로 구분 가능
+```
 
 ---
 
-## Day 17 — PDF Engine
-
-### 작업: `backend/pdf/generator.py` (Playwright)
+## Day 16 — PDF Engine
 
 ```python
 def generate_pdf(html_content: str, output_path: str) -> None:
@@ -455,84 +323,105 @@ def generate_pdf(html_content: str, output_path: str) -> None:
 ```
 
 ### 완료 기준
-- [ ] `output/sample_report_hr.pdf`, `output/sample_report_data.pdf` 생성
-- [ ] A4 기준 12~20페이지 (12섹션 기준, 13섹션 대비 약간 축소)
-- [ ] 색상이 인쇄 시(흑백 시뮬레이션)에도 UNIQUE/COMMON 텍스트 라벨로 구분 가능한지 확인 (10_PDF_TEMPLATE_SPEC.md §2 Section 5 주의사항)
+
+```
+[ ] output/sample_report_hr_dominant.pdf 생성
+[ ] output/sample_report_mixed.pdf 생성
+[ ] 10_PDF_TEMPLATE_SPEC.md §5 Limitations — 가변 행 수 레이아웃 확인 (최대 8행 초과 테스트)
+```
 
 ---
 
-## Day 18 — FastAPI
+## Day 17 — FastAPI
 
 ### 3개 엔드포인트 (`11_API_SPEC.md` 기반)
 
 ```python
-POST /reports                  # CREATED 반환, background task로 엔진 실행
-GET  /reports/{report_id}      # 상태/결과 반환
-GET  /reports/{report_id}/pdf  # PDF 반환
+POST /reports      # target_priority_text 필수, target_job_family 없음
+                   # BLOCKED 시 422 LOW_CONFIDENCE_INPUT
+                   # force=true 파라미터 지원
+GET  /reports/{id} # profile_blend 포함 응답
+GET  /reports/{id}/pdf
 ```
 
-`target_job_family` 검증 시 10개 ENUM(`04_PAYLOAD_CONTRACT.md` §1) 체크 → `INVALID_JOB_FAMILY` 에러 처리.
-
 ### 완료 기준
-- [ ] `uvicorn main:app --reload` 정상 동작
-- [ ] curl로 3개 엔드포인트 E2E 테스트 (HR로 생성 → 폴링 → PDF)
-- [ ] 잘못된 job_family("ACCOUNTING" 등) 입력 시 400 + `INVALID_JOB_FAMILY` 확인
+
+```
+[ ] target_job_family 필드 전송해도 무시 (하위 호환)
+[ ] target_priority_text 30자 미만 → VALIDATION_ERROR
+[ ] BLOCKED 상태 → LOW_CONFIDENCE_INPUT 422
+[ ] force=true → BLOCKED에도 분석 진행, confidence_level="LOW"
+[ ] GET 응답에 profile_blend 포함 확인
+```
 
 ---
 
-## Day 19 — Supabase 연동
+## Day 18 — Supabase 연동
 
 ### 작업
-1. `03_ERD.md` migration 실행 (ENUM 6종: report_status, job_family(10), evidence_type, skill_group, match_level, gap_severity + 테이블 8개)
-2. `job_requirement_stats` 시딩 — Day 6에서 생성한 `data/job_requirements_*.json` 10개 전부 INSERT
-3. 시딩 후 `03_ERD.md` §2.5 weight 합계 검증 쿼리 실행 → 10개 Job Family 전부 UNIQUE=0.65, COMMON=0.35 확인
-4. FastAPI에서 Supabase client 연동, report 상태 저장
+
+1. `03_ERD.md` v3 migration 실행 (ENUM 6종 → job_requirement_profiles 테이블 포함)
+2. `data/job_requirements_*.json` 10개 → `job_requirement_profiles` 테이블 시딩
+3. 시딩 후 weight 합계 검증 쿼리 실행 (UNIQUE=0.65, COMMON=0.35 × 10개 profile_key)
+4. `reports.profile_blend` (JSONB, GIN 인덱스) 저장 확인
 
 ### 완료 기준
-- [ ] `POST /reports` → DB 레코드 생성 확인
-- [ ] 엔진 완료 후 `reports.report_json` 저장 확인 (`reports.target_job_family` ENUM 10개 값 모두 INSERT 가능한지 확인)
-- [ ] `report_scores`(unique_total/common_total/core_penalty 컬럼 포함), `requirement_matches`(skill_group, confidence_total 포함), `report_gaps`(skill_group 포함) 정규화 저장 확인
+
+```
+[ ] job_requirement_profiles: 10개 profile_key × 9개 requirement = 90행
+[ ] weight 합계 검증 쿼리: 10개 전부 UNIQUE=0.65, COMMON=0.35
+[ ] reports.profile_blend JSONB 저장 + GIN 인덱스 생성 확인
+[ ] career_evidences: source 컬럼, career_history_id nullable FK 확인
+[ ] BLOCKED confidence_level의 경우 reports 테이블에 confidence_level='LOW' 저장 확인
+```
 
 ---
 
-## Day 20 — React (Form + Result)
+## Day 19 — React
 
-### 3개 페이지
+### 3개 페이지 (v3)
 
 ```
-/             — Landing (10개 Job Family 그리드, HR/Data 샘플 미리보기)
-/report/new   — 입력 폼 (target_job_family select 10개 옵션, career_histories 동적 추가)
-/report/:id   — Generating(폴링) → Result(UNIQUE/COMMON 점수 분리 표시) → PDF 다운로드
+/             Landing (예시 카드 5~6개, Job Family 그리드 없음)
+/report/new   Form (target_priority_text textarea, career_histories, select 없음)
+              서버 422 LOW_CONFIDENCE_INPUT → 모달 ([수정하기] / [그래도 분석하기])
+/report/:id   Result → profile_blend 막대 + blend_description 표시
+              confidence_level=LOW → 안내 배너
+              PDF 다운로드 버튼
 ```
 
 ### 완료 기준
-- [ ] Form 제출 → report_id 받음 → Generating 화면
-- [ ] 폴링으로 READY 전환 → Result 화면에 `summary.unique_score`/`common_score` 도넛 2개 렌더링
-- [ ] PDF 다운로드 버튼 동작
-- [ ] 10개 Job Family select 옵션이 `04_PAYLOAD_CONTRACT.md` ENUM과 정확히 일치
+
+```
+[ ] Landing에 "직무 선택 없이 자유롭게 입력" UX 전달
+[ ] Form: target_priority_text textarea + 최소 30자 가이드
+[ ] Form: 422 수신 시 확인 모달 → force=true 재요청
+[ ] Result: meta.profile_blend → 수평 막대 차트 렌더링 (CSS only)
+[ ] Result: confidence_level=LOW → 배너 표시
+[ ] PDF 다운로드 동작
+```
 
 ---
 
-## Day 21 — Bug Fix + Deploy
+## Day 20 — Bug Fix + Deploy
 
 ### 오전: Bug Fix
 
 ```
+[ ] target_priority_text 30자 경계값 테스트
 [ ] career_histories 1개 / 10개 엣지 케이스
-[ ] responsibilities 50자 최소값 검증
-[ ] LLM 실패 시 폴백 동작 확인 (09_TEXT_TEMPLATE_RULES.md §7)
-[ ] PDF 생성 실패 시 에러 응답 확인
-[ ] 10개 Job Family 중 HR/Data 외 나머지 8개도 최소 1회 생성 테스트 (job_requirements json만 다르므로 에러 시 즉시 발견 가능해야 함)
+[ ] user_vector가 거의 zero vector인 경우 (BLOCKED) 정상 422 반환 확인
+[ ] LLM 실패 시 폴백 동작 (09_TEXT_TEMPLATE_RULES.md §8)
+[ ] profile_blend Σ == 1.0인지 응답에서 확인 (부동소수점 누적 오차 방어)
 [ ] CORS 설정
+[ ] MIXED 케이스에서 blend_description 문장이 모든 브라우저에서 정상 렌더링
 ```
 
 ### 오후: Deploy
 
 ```bash
-# Frontend
 cd frontend && vercel --prod
-
-# Backend (render.yaml — playwright install chromium 빌드 커맨드 포함 필수)
+# backend: render.yaml (playwright chromium 빌드 커맨드 포함 필수)
 ```
 
 ### 환경변수 체크리스트
@@ -540,23 +429,20 @@ cd frontend && vercel --prod
 ```
 SUPABASE_URL
 SUPABASE_SERVICE_KEY
-OPENAI_API_KEY (optional)
+OPENAI_API_KEY (optional, LLM polish)
 FRONTEND_URL (CORS)
 ```
 
-### Week 3 마감 = 프로젝트 완료 체크리스트
+### 최종 완료 체크리스트
 
 ```
 [ ] 실제 URL 접속 가능
-[ ] HR/Data 둘 다 리포트 생성 → PDF 다운로드 성공
-[ ] 생성 소요 시간 5분 이내
-[ ] 동일 입력 재실행 시 동일 점수 (배포 환경에서도 재검증)
-[ ] 10개 Job Family select에서 임의의 항목 선택 시 에러 없이 리포트 생성 (job_requirements json 10종이 모두 유효함을 실증)
+[ ] HR dominant 케이스: 리포트 생성 → blend_display_mode=SINGLE → PDF 다운로드 성공
+[ ] MIXED 케이스: 리포트 생성 → blend_display_mode=MIXED → PDF 다운로드 성공
+[ ] 생성 소요 시간 ≤ 5분
+[ ] 동일 입력 재실행 시 동일 점수 (배포 환경에서도 결정론 재검증)
+[ ] meta.weight_source = "MANUAL_V1" PDF Section 12에 작은 글씨로 표시 확인
 ```
-
-**이 시점 체감 완성도: 100% (V1 MVP, 10 Job Families)**
-
----
 
 ---
 
@@ -564,25 +450,37 @@ FRONTEND_URL (CORS)
 
 | 항목 | v2 | v3 |
 |------|----|----|
-| Job Family | 2개 (HR, Data) | **10개**, weight는 알고리즘으로 자동 배분 |
-| Skill Taxonomy | ~39개 (HR+Data 전용) | **~79개** (공통 20 + 고유 40 + 보조 21) |
-| weight 정의 방식 | 사람이 9개 직접 입력 | **`core_skill_keys` 4~5개만 입력 → 자동 배분 (65/35)** |
-| Report Schema 신규 필드 | - | `skill_group`, `confidence_total`, `unique_score`, `common_score`, `unique_total`, `common_total`, `core_penalty` |
-| reportSections | 13개 | **12개** (marketAnalysis 제외, V1.1로) |
-| Week 1 산출물 상태 | 작성 예정 | **00~12 중 12개 문서 이미 완료** |
-| Day 1~5 | Vision~Evidence Rules 작성 | **완료됨 — 이 로드맵에서 제외** |
-| Day 6 (신규) | - | 10개 Job Family requirement DB 생성 (알고리즘 1회 실행) |
+| 직무 입력 방식 | `target_job_family` ENUM select (10개) | `target_priority_text` 자유 텍스트 |
+| Weight 결정 방식 | 선택된 1개 프로필의 고정 weight | N개 프로필과의 코사인 유사도 블렌딩 → 65/35 재정규화 |
+| Report meta | `target_job_family_ko` | `profile_blend`, `weight_source`, `confidence_level` |
+| targetJobAnalysis | 1개 프로필의 9개 requirement | N개 블렌딩 결과, 4~8개 UNIQUE + COMMON, `source_profiles` 배지 |
+| evidence 소스 | `career_histories`만 | `career_histories` + `target_priority_text` (듀얼) |
+| DB | `job_requirement_stats(job_family ENUM)` | `job_requirement_profiles(profile_key TEXT)` |
+| ERD | `reports.target_job_family` ENUM | `reports.profile_blend` JSONB |
+| 신규 엔진 모듈 | 없음 | `scripts/blend_profiles.py` |
+| sample fixture | HR, Data 각 1종 | HR dominant, MIXED 각 1종 |
 
 ---
 
 # 부록 B: 매일 자가 점검
 
 ```
-1. 오늘 작업이 04_PAYLOAD_CONTRACT.md 또는 05_REPORT_SCHEMA.md를 건드리는가?
-   → 그렇다면 문서부터 수정했는가? (.cursorrules Rule 10)
-2. sample_report_hr.json과 sample_report_data.json의 구조가 여전히 동일한가?
-3. 오늘 추가한 코드가 결정론적인가? (06_SCORING_RULES.md §10)
-4. original_text를 수정한 코드가 없는가?
-5. UNIQUE/COMMON weight 합이 65/35를 유지하는가?
-6. 새 Job Family(11번째 이상)를 추가하고 싶은 유혹이 들지 않았는가? (V1.1로 미룰 것)
+1. 오늘 작업이 04 또는 05를 건드리는가? → 문서 먼저 수정했는가?
+2. blended_requirements의 Σ UNIQUE == 0.65, Σ COMMON == 0.35인가?
+3. Σ profile_blend.values() == 1.0인가?
+4. confidence_level = BLOCKED인 경우 blend_requirements()를 호출하는 코드 경로가 없는가?
+5. original_text를 수정한 코드가 없는가?
+6. 동일 입력 → 동일 출력인가? (외부 모델/랜덤 없음)
+7. target_job_family ENUM, INVALID_JOB_FAMILY가 코드에 남아있지 않은가?
+8. N을 10보다 늘리고 싶은 유혹이 들지 않았는가? (데이터 없이 확장 금지)
 ```
+
+---
+
+# 알려진 문제점 (§ Limitations — 전체 로드맵 관점)
+
+| 문제 | 영향 | 비고 |
+|------|------|------|
+| Day 8(blend_profiles.py)이 Week 2의 모든 후속 모듈의 선행 조건 | Day 8에서 막히면 Day 9~13이 연쇄 지연 | 블렌딩 알고리즘 자체는 순수 산술이라 언어/프레임워크 의존성 없음 — 빠른 구현 가능 |
+| MIXED 케이스 sample_report 손작성이 HR dominant보다 복잡 | Day 7 작업량이 v2 대비 약 1.5배 | MIXED 케이스는 "2개 좌표축의 blended_requirements union"이므로 requirement 수가 더 많음 |
+| Render 배포 환경에서 Playwright + 블렌딩 계산이 동시에 동작할 때 메모리 부담 | OOM(Out of Memory) 가능성 | 블렌딩은 순수 딕셔너리 산술이라 메모리 부담 매우 낮음. Playwright만 주의 |

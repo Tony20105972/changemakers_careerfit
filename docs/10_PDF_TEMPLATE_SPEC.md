@@ -1,10 +1,12 @@
 # 10 — PDF Template Spec
 
 Report JSON → PDF 변환 규격.  
-PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지 않는다. (`00_PROJECT_VISION.md` §3)
+PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지 않는다.
 
-> v2 변경: 13섹션 → **12섹션** (Market Intelligence 제외, V1.1로 이동).  
-> `skill_group`(UNIQUE/COMMON) 구분을 색상 코드로 전체 문서에 일관 적용.
+> **v3 변경:**  
+> - Section 1(표지)에서 `target_job_family_ko` 단일 라벨 제거 → `blend_description` 또는 상위 프로필명으로 대체  
+> - Section 2(Executive Summary)에 블렌딩 Explanation 박스 추가 (최상단)  
+> - Section 4(Target Job Analysis)에 `profile_blend` 막대 시각화 + `source_profiles` 배지 추가
 
 ---
 
@@ -20,31 +22,37 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 | Primary 색상 | #2B6CB0 |
 | Accent 색상 | #48BB78 |
 | Danger 색상 | #E53E3E |
-| **UNIQUE 강조 색상 (v2)** | #2B6CB0 (진한 파랑) |
-| **COMMON 강조 색상 (v2)** | #90CDF4 (연한 파랑) |
+| UNIQUE 강조 색상 | #2B6CB0 (진한 파랑) |
+| COMMON 강조 색상 | #90CDF4 (연한 파랑) |
+| Blend 1위 색상 | #2B6CB0 |
+| Blend 2위 색상 | #4299E1 |
+| Blend 3위 색상 | #90CDF4 |
 
 ---
 
 ## 2. 섹션 구성 (12개)
-
-`05_REPORT_SCHEMA.md` §12 `reportSections`의 `order` 값과 1:1 대응.
 
 ### Section 1 (order=1): 표지 (Cover)
 
 ```
 ┌────────────────────────────────────┐
 │                                    │
-│         CareerFit                  │  ← 서비스명 (32pt, Primary)
-│   커리어 적합도 전략 리포트          │  ← 부제 (16pt)
+│         CareerFit                  │
+│   커리어 적합도 전략 리포트          │
 │                                    │
-│   목표 직무: 인사(HR)               │  ← meta.target_job_family_ko
-│   분석 일시: 2025년 6월 1일         │  ← meta.generated_at
-│   리포트 ID: 550e8400...            │  ← meta.report_id (앞 8자리)
+│   [blend_display_mode=SINGLE]      │
+│   분석 프로필: 인사(HR)             │ ← top_profile_ko (가장 비중 큰 프로필)
 │                                    │
+│   [blend_display_mode=MIXED]       │
+│   분석 프로필: HR 81% + Operations 19%│ ← blend_description 요약
+│                                    │
+│   분석 일시: 2025년 6월 1일         │
+│   리포트 ID: 550e8400...            │
+│   데이터 기준: MANUAL_V1            │ ← meta.weight_source (작은 글씨)
 └────────────────────────────────────┘
 ```
 
-**데이터 소스:** `meta`
+**데이터 소스:** `meta.profile_blend`, `meta.weight_source`, `meta.generated_at`, `meta.report_id`
 
 ---
 
@@ -52,63 +60,87 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ```
 ┌────────────────────────────────────┐
-│  종합 적합도 점수                    │
+│  ┌──────────────────────────────┐  │
+│  │  [블렌딩 Explanation 박스]    │  │  ← v3 신규, 최상단
+│  │  "당신의 경험은 'HR' 특성 81% │  │
+│  │   와 'Operations' 특성 19%가  │  │
+│  │   혼합된 프로필로 분석되었습니다"│  │
+│  │                               │  │
+│  │  ████████████████████░░ HR 81%│  │  ← profile_blend 수평 막대
+│  │  ████░░░░░░░░░░░░░░░░ Ops 19% │  │
+│  └──────────────────────────────┘  │
 │                                    │
-│         78.5 / 100                 │  ← summary.total_score (48pt, bold)
-│           우수 ★★★★☆              │  ← summary.score_label + 별점
+│         78.5 / 100                 │
+│           우수 ★★★★☆              │
 │                                    │
 │  ┌──────────────┬──────────────┐  │
-│  │ 직무 고유 역량 │  범용 역량    │  │  ← v2 신규: 도넛 차트 2개
-│  │  58.4 / 65    │  20.1 / 35    │  │     unique_score / unique_score_max
-│  │   (90%)       │   (57%)       │  │     common_score / common_score_max
+│  │ 직무 고유 역량 │  범용 역량   │  │
+│  │  51.2 / 65    │  27.3 / 35   │  │
+│  │   (79%)       │   (78%)      │  │
 │  └──────────────┴──────────────┘  │
 │                                    │
-│  요약                               │
-│  채용과 온보딩 역량은 시장 기준을    │  ← summary.one_line
+│  채용과 온보딩 역량은 시장 기준을    │
 │  충족하나, 노동법과 급여 관리        │
 │  보강이 필요합니다.                  │
 │                                    │
-│  핵심 강점: 채용 관리, 교육/온보딩   │  ← summary.key_strengths
-│  주요 갭:   노동법, 급여 관리        │  ← summary.key_gaps
+│  핵심 강점: 채용 관리, 교육/온보딩   │
+│  주요 갭:   노동법, 급여 관리        │
 └────────────────────────────────────┘
 ```
 
-**데이터 소스:** `summary`
+**v3 신규 — 블렌딩 Explanation 박스:**
+- `summary.blend_description` 텍스트
+- `meta.profile_blend` 기준 수평 막대 차트 (ratio 내림차순, 상위 3개만, 나머지는 "기타"로 합산)
+- Blend 1/2/3위 색상(§1)으로 각 막대 색상 구분
 
-**v2 디자인 노트:** 도넛 차트 2개는 각각 65/35 만점 기준으로 그려지며, 색상은 UNIQUE=#2B6CB0, COMMON=#90CDF4 사용.
+**데이터 소스:** `summary`, `meta.profile_blend`
 
 ---
 
 ### Section 3 (order=3): Career Profile
 
-- 총 경력 기간, 직장 수 (`careerProfile.total_experience_label`, `.career_count`)
+- 총 경력 기간, 직장 수
 - 경력 타임라인 테이블 (회사명 | 직책 | 기간)
-- 추출된 스킬 태그 클라우드 — `extracted_skills[].skill_group`에 따라 UNIQUE는 진한 배경, COMMON은 연한 배경 태그로 표시
+- 추출된 스킬 태그 클라우드 — UNIQUE는 진한 배경(#2B6CB0), COMMON은 연한 배경(#90CDF4)
+- **v3 신규:** `source="target_priority_text"` Evidence에서 추출된 스킬은 별도 "목표 기반 역량" 섹션에 따로 표시 (동일 스킬이면 하나만 표시, 출처 라벨만 구분)
 
-**데이터 소스:** `careerProfile`
+**데이터 소스:** `careerProfile`, `evidenceMapping[].evidences[].source`
 
 ---
 
-### Section 4 (order=4): Target Job Analysis
-
-2개 테이블로 구성:
+### Section 4 (order=4): Target Job Analysis (v3 대폭 변경)
 
 ```
-[테이블 1] 직무 고유 역량 (65%)               [테이블 2] 범용 역량 (35%)
-┌────────────┬──────┬────────┬────────┐    ┌────────────┬──────┬────────┐
-│ 역량        │ 비중  │ 핵심   │ 적합도  │    │ 역량        │ 비중  │ 적합도  │
-├────────────┼──────┼────────┼────────┤    ├────────────┼──────┼────────┤
-│ 채용 관리    │ 16.3%│  ★    │ FULL   │    │ 커뮤니케이션 │ 7.0% │ STRONG │
-│ 온보딩       │ 16.3%│  ★    │ FULL   │    │ ...         │      │        │
-│ 노동법       │ 16.3%│  ★    │ NONE   │    └────────────┴──────┴────────┘
-│ 급여 관리    │ 16.3%│       │ FULL   │
-└────────────┴──────┴────────┴────────┘
+[상단] Profile Blend 시각화
+  HR      ████████████████████████ 81%
+  Operations ████████            19%
+
+[테이블 1] 직무 고유 역량 (UNIQUE, 65%)
+┌──────────────┬──────┬───────┬────────┬────────────────┐
+│ 역량          │ 비중  │ 핵심  │ 출처   │ 매칭 결과       │
+├──────────────┼──────┼───────┼────────┼────────────────┤
+│ 채용 관리     │ 13.2%│  ★   │ [HR]   │ FULL           │
+│ 온보딩        │ 13.2%│  ★   │ [HR]   │ FULL           │
+│ 노동법        │ 13.2%│  ★   │ [HR]   │ NONE ⚠         │
+│ 급여 관리     │ 13.2%│       │ [HR]   │ FULL           │
+│ 프로세스 개선 │  3.1%│  ★   │ [Ops]  │ PARTIAL        │
+│ ...           │      │       │        │                │
+└──────────────┴──────┴───────┴────────┴────────────────┘
+
+[테이블 2] 범용 역량 (COMMON, 35%)
+┌──────────────┬──────┬────────────────┬────────────────┐
+│ 역량          │ 비중  │ 출처            │ 매칭 결과       │
+├──────────────┼──────┼────────────────┼────────────────┤
+│ 커뮤니케이션  │ 7.4% │ [HR] [Ops]     │ STRONG         │
+│ ...           │      │                │                │
+└──────────────┴──────┴────────────────┴────────────────┘
 ```
 
-- `is_core=true` 항목은 ★ 표시
+- **`source_profiles` 배지:** `[HR]`, `[Ops]` 형태의 작은 배지로 각 역량의 출처 좌표축 표시
+- `is_core` 항목 ★ 표시, `match_level=NONE`인 is_core 항목 ⚠ 표시
 - 테이블 1 헤더 배경 = UNIQUE 색상(#2B6CB0), 테이블 2 헤더 배경 = COMMON 색상(#90CDF4)
 
-**데이터 소스:** `targetJobAnalysis.unique_requirements`, `.common_requirements`
+**데이터 소스:** `targetJobAnalysis.profile_blend`, `.unique_requirements`, `.common_requirements`
 
 ---
 
@@ -116,17 +148,17 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ```
 [matched]
-채용 관리 (UNIQUE)     ████████████████ FULL     16.0점
-문서화 (COMMON)        ████████████████ FULL      7.0점
-커뮤니케이션 (COMMON)   ████████████░░░░ STRONG    5.25점
+채용 관리 (UNIQUE · [HR])     ████████████████ FULL     13.2점
+온보딩 (UNIQUE · [HR])        ████████████████ FULL     13.2점
+커뮤니케이션 (COMMON · [HR][Ops])████████████░░░░ STRONG  5.6점
 
 [unmatched]
-노동법 (UNIQUE)        ░░░░░░░░░░░░░░░░ NONE      0.0점
-데이터 분석 (COMMON)    ░░░░░░░░░░░░░░░░ NONE      0.0점
+노동법 (UNIQUE · [HR])        ░░░░░░░░░░░░░░░░ NONE ⚠   0.0점
+프로세스 개선 (UNIQUE · [Ops]) ░░░░░░░░░░░░░░░░ WEAK      0.8점
 ```
 
-- progress bar 색상: `match_level`에 따라 FULL=#48BB78, STRONG=연두, PARTIAL=노랑, WEAK=주황, NONE=#E53E3E
-- 막대 우측에 `(UNIQUE)` / `(COMMON)` 라벨 표기 (텍스트, 색상 아님 — 인쇄 시 흑백 대비 고려)
+- `source_profiles` 배지를 막대 우측에 표기
+- 막대 색상: FULL=#48BB78, STRONG=연두, PARTIAL=노랑, WEAK=주황, NONE=#E53E3E
 
 **데이터 소스:** `skillMapping.matched`, `.unmatched`
 
@@ -135,24 +167,27 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 ### Section 6 (order=6): Evidence Mapping
 
 ```
-채용 관리 (UNIQUE) [FULL]
+채용 관리 (UNIQUE · [HR]) [FULL]
   ↳ "신입 채용 전 과정 운영. JD 작성, 서류 검토, 임원 면접 일정 조율 및 진행."
      출처: 주식회사 ABC / HR 매니저 (2020.03 – 2023.12) · EXPLICIT
   ↳ "연간 채용 목표 120% 달성."
      출처: 주식회사 ABC / HR 매니저 (2020.03 – 2023.12) · ACHIEVED
+  ↳ "1순위: 인사관리(인력운영/평가, 급여)... 채용 업무를 직접 수행하며 성취를 느낌"
+     출처: 목표 입력 (target_priority_text) · EXPLICIT   ← v3 신규 표시
 ```
 
-**데이터 소스:** `evidenceMapping`  
-**주의:** 원문 텍스트는 따옴표로 구분하여 가공되지 않음을 명시. `evidence_type`을 작게 표기.
+**v3 신규:** `source="target_priority_text"` Evidence는 출처를 "목표 입력"으로 표기.
+
+**데이터 소스:** `evidenceMapping`
 
 ---
 
 ### Section 7 (order=7): Fit Score
 
-- 레이더 차트: UNIQUE 4~5개 + COMMON 5개, 총 9~10개 축
-  - UNIQUE 축은 진한 파랑 영역, COMMON 축은 연한 파랑 영역으로 겹쳐 표시
-- 점수 breakdown 테이블 (`scores.breakdown` 전체, requirement_key별)
-- 하단에 `unique_total` / `common_total` / `core_penalty` / `total` 요약 박스
+- 레이더 차트: UNIQUE 4~8개(블렌딩 결과, 가변) + COMMON 5개
+  - UNIQUE 축은 진한 파랑 영역, COMMON 축은 연한 파랑 영역
+- 점수 breakdown 테이블 (블렌딩된 requirement 전체)
+- 하단 요약 박스: `unique_total` / `common_total` / `core_penalty` / `total`
 
 **데이터 소스:** `scores`
 
@@ -160,19 +195,17 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ### Section 8 (order=8): Strength Analysis
 
-강점 Top 3 카드형 레이아웃:
-
 ```
 ┌─────────────────────────────────┐
-│  #1  채용 관리 [UNIQUE · FULL]    │
-│  채용 전 과정을 직접 운영한       │
+│  #1  채용 관리 [UNIQUE · HR]     │  ← source_profiles 배지 추가
+│  채용 전 과정을 직접 운영한        │
 │  검증된 경험                     │
 │                                  │
 │  근거: "JD 작성부터 온보딩까지..." │
+│  ✓ 목표 직무에서도 중요 역량으로   │  ← priority_clause (target_priority_text 유래 시)
+│    언급됨                        │
 └─────────────────────────────────┘
 ```
-
-각 카드 좌상단에 `skill_group` 배지(UNIQUE/COMMON) 표시.
 
 **데이터 소스:** `strengths`
 
@@ -181,13 +214,12 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 ### Section 9 (order=9): Gap Analysis
 
 ```
-┌──────┬─────────────┬──────────┬────────┬──────────────────┐
-│ 우선순위│ 역량         │ 구분      │ 심각도  │ 설명              │
-├──────┼─────────────┼──────────┼────────┼──────────────────┤
-│  1   │ 노동법       │ UNIQUE   │ CRITICAL│ 관련 경험 없음     │
-│  2   │ 급여 관리    │ UNIQUE   │ MAJOR   │ 간접 경험만 존재   │
-│  3   │ 데이터 분석   │ COMMON   │ MINOR   │ 경험 없음, 보강 권장│
-└──────┴─────────────┴──────────┴────────┴──────────────────┘
+┌──────┬──────────────┬──────────┬────────┬──────────────────┐
+│ 순위  │ 역량          │ 출처      │ 심각도  │ 설명              │
+├──────┼──────────────┼──────────┼────────┼──────────────────┤
+│  1   │ 노동법       │ [HR]     │ CRITICAL│ 관련 경험 없음     │
+│  2   │ 프로세스 개선 │ [Ops]    │ MAJOR   │ 부분 경험만 존재   │
+└──────┴──────────────┴──────────┴────────┴──────────────────┘
 ```
 
 심각도 색상: CRITICAL=#E53E3E, MAJOR=주황, MINOR=노랑
@@ -200,14 +232,12 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ```
 단기 (1–2개월)
-  ☐ 노동법 온라인 강의 수강 (40시간)           [관련: 노동법 · UNIQUE]
-  ☐ 급여 시스템(ERP) 운영 실습 참여            [관련: 급여 관리 · UNIQUE]
+  ☐ 노동법 온라인 강의 수강        [관련: 노동법 · UNIQUE · HR]
+  ☐ 프로세스 개선 사내 프로젝트 참여 [관련: 프로세스 개선 · UNIQUE · Ops]
 
 중기 (3–6개월)
-  ☐ HR 제너럴리스트 포지션 지원 준비
+  ☐ HR/Operations 복합 역할 포지션 지원 준비
 ```
-
-`related_skill_key`가 있는 항목은 우측에 `[관련: {label_ko} · {skill_group}]` 표기, null이면 표기 생략.
 
 **데이터 소스:** `recommendations`
 
@@ -215,11 +245,10 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ### Section 11 (order=11): 90-Day Roadmap
 
+3단계 가로 타임라인:
 ```
 [1–30일: 갭 보완] → [31–60일: 역량 심화] → [61–90일: 지원 준비]
 ```
-
-3단계 가로 타임라인, 각 단계 하단에 `actions[]` 1~3개 bullet.
 
 **데이터 소스:** `roadmap`
 
@@ -227,11 +256,14 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ### Section 12 (order=12): Final Assessment
 
-- 종합 결론 문장 (`09_TEXT_TEMPLATE_RULES.md` §6 CONCLUSION_TEMPLATES)
-- 다음 단계 행동 3가지 (`recommendations.short_term` + `mid_term` 통합)
-- CareerFit 워터마크 및 생성 일시 (`meta.generated_at`)
+- 종합 결론 문장 (`09_TEXT_TEMPLATE_RULES.md` §7)
+- 다음 단계 행동 3가지
+- **v3 신규:** `meta.weight_source == "MANUAL_V1"`인 경우  
+  "이 분석의 직무별 역량 비중(weight)은 전문가 기준으로 설정되었으며,  
+  향후 시장 공고 데이터 기반으로 업데이트됩니다" 안내 (작은 글씨)
+- CareerFit 워터마크 및 생성 일시
 
-**데이터 소스:** `summary.one_line` + `recommendations`
+**데이터 소스:** `summary.one_line`, `recommendations`, `meta.weight_source`
 
 ---
 
@@ -239,13 +271,13 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 | 항목 | 규칙 |
 |------|------|
-| 페이지 번호 | 우하단, "X / 12" 형식 (12섹션 기준, 단 섹션이 여러 페이지에 걸칠 수 있으므로 실제 총 페이지수와는 다름) |
-| 섹션 헤더 | 배경색 Primary, 흰 텍스트, 좌측 order 숫자 |
+| 페이지 번호 | 우하단, "X / 총 페이지" 형식 |
+| 섹션 헤더 | 배경색 Primary, 흰 텍스트 |
 | 표 테두리 | 1px solid #E2E8F0 |
-| 강조 텍스트 | Bold, Primary 색상 |
 | 원문 인용 | 이탤릭 + 따옴표 + 회색 배경 (#F7FAFC) |
-| UNIQUE 배지 | 배경 #2B6CB0, 흰 텍스트, 작은 라운드 사각형 |
-| COMMON 배지 | 배경 #90CDF4, 진한 텍스트, 작은 라운드 사각형 |
+| UNIQUE 배지 | 배경 #2B6CB0, 흰 텍스트 |
+| COMMON 배지 | 배경 #90CDF4, 진한 텍스트 |
+| source_profiles 배지 | 배경 #EDF2F7(회색), 진한 텍스트, 작은 라운드 (예: `[HR]`, `[Ops]`) |
 | FULL 색상 | #48BB78 (초록) |
 | NONE/CRITICAL 색상 | #E53E3E (빨강) |
 
@@ -255,25 +287,25 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ```
 backend/pdf/templates/
-├── report.html.j2              # 메인 템플릿, reportSections 순서대로 partials include
+├── report.html.j2
 ├── partials/
-│   ├── cover.html.j2           # Section 1
-│   ├── summary.html.j2         # Section 2 (도넛 차트 2개 포함)
-│   ├── career_profile.html.j2  # Section 3
-│   ├── target_job.html.j2      # Section 4 (2개 테이블)
-│   ├── skill_mapping.html.j2   # Section 5
-│   ├── evidence_mapping.html.j2# Section 6
-│   ├── fit_score.html.j2       # Section 7 (레이더 차트)
-│   ├── strength_analysis.html.j2# Section 8
-│   ├── gap_analysis.html.j2    # Section 9
-│   ├── recommendations.html.j2 # Section 10
-│   ├── roadmap.html.j2         # Section 11
-│   └── final_assessment.html.j2# Section 12
+│   ├── cover.html.j2
+│   ├── summary.html.j2           ← v3: blend_description 박스 + 막대 차트 추가
+│   ├── career_profile.html.j2
+│   ├── target_job.html.j2        ← v3: profile_blend 막대 + source_profiles 배지
+│   ├── skill_mapping.html.j2     ← v3: source_profiles 배지
+│   ├── evidence_mapping.html.j2  ← v3: target_priority_text 출처 표시
+│   ├── fit_score.html.j2
+│   ├── strength_analysis.html.j2 ← v3: priority_clause 추가
+│   ├── gap_analysis.html.j2      ← v3: source_profiles 배지
+│   ├── recommendations.html.j2
+│   ├── roadmap.html.j2
+│   └── final_assessment.html.j2  ← v3: weight_source 안내 추가
 └── static/
-    └── report.css               # UNIQUE/COMMON 색상 변수 정의 (CSS custom properties)
+    └── report.css
 ```
 
-`report.css` 색상 변수 예시:
+`report.css` 추가 변수 (v3):
 ```css
 :root {
   --color-primary: #2B6CB0;
@@ -281,6 +313,10 @@ backend/pdf/templates/
   --color-danger: #E53E3E;
   --color-unique: #2B6CB0;
   --color-common: #90CDF4;
+  --color-blend-1: #2B6CB0;
+  --color-blend-2: #4299E1;
+  --color-blend-3: #90CDF4;
+  --color-source-badge: #EDF2F7;
   --color-match-full: #48BB78;
   --color-match-strong: #9AE6B4;
   --color-match-partial: #F6E05E;
@@ -288,3 +324,14 @@ backend/pdf/templates/
   --color-match-none: #E53E3E;
 }
 ```
+
+---
+
+## 5. 알려진 문제점 (§ Limitations)
+
+| 문제 | 영향 | 비고 |
+|------|------|------|
+| Section 4 테이블 행 수가 가변 (UNIQUE 4~8개) | PDF 레이아웃에서 테이블이 한 페이지를 초과하거나 여백이 과도할 수 있음 | Playwright CSS `page-break-inside: avoid` + 최대 행 수 제한(8개) 권장 |
+| `source_profiles` 배지가 여러 개(예: [HR][Ops][Product])이면 셀 넘침 | 표 레이아웃 깨짐 | 최대 2개 배지 표시, 초과 시 "+N" 축약 |
+| Section 2 blend 막대 차트를 HTML/CSS로 구현 시 Playwright 렌더링 지연 가능 | PDF 생성 시간 증가 | 막대 차트는 CSS `width` 퍼센트로 구현 (Canvas/JS 불필요) |
+| `meta.weight_source` 안내 문구(Section 12)가 기술적으로 들릴 수 있음 | 일반 사용자에게 불필요한 정보처럼 느껴질 가능성 | 폰트 사이즈 8pt, 회색 (#718096)으로 최소 존재감 유지 |

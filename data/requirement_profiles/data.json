@@ -1,0 +1,18 @@
+{
+  "profile_id": "data",
+  "profile_name": "Data",
+  "profile_name_ko": "데이터",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "sql", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "python", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "data_visualization", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "statistics", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "communication", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "documentation", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "data_analysis", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "ab_testing", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "presentation", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

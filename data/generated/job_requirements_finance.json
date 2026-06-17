@@ -1,0 +1,119 @@
+{
+  "profile_id": "finance",
+  "profile_name": "Finance",
+  "profile_name_ko": "재무/회계",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "financial_modeling",
+      "label_ko": "재무 모델링",
+      "description": "엑셀/스프레드시트 기반 재무 모델 구축",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "budgeting_advanced",
+      "label_ko": "예산 수립 (고급)",
+      "description": "조직 단위 예산 편성 및 시나리오 분석",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "accounting",
+      "label_ko": "회계",
+      "description": "재무제표 작성, 회계 처리",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "financial_reporting",
+      "label_ko": "재무 보고",
+      "description": "경영진/투자자 대상 재무 리포트 작성",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "excel",
+      "label_ko": "Excel/스프레드시트",
+      "description": "피벗, 수식, 매크로 등 고급 활용",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "reporting",
+      "label_ko": "보고/리포팅",
+      "description": "정기 보고서 작성 및 경영진 보고",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "budgeting",
+      "label_ko": "예산 관리",
+      "description": "예산 편성, 집행, 모니터링",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "cost_management",
+      "label_ko": "비용 관리",
+      "description": "예산 편성 및 비용 최적화",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "finance"
+      ]
+    },
+    {
+      "skill_key": "tax_compliance",
+      "label_ko": "세무 처리",
+      "description": "세금 신고 및 컴플라이언스 대응",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "finance"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

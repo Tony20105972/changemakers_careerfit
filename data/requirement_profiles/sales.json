@@ -1,0 +1,18 @@
+{
+  "profile_id": "sales",
+  "profile_name": "Sales",
+  "profile_name_ko": "세일즈",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "lead_generation", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "account_management", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "negotiation", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "crm_management", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "communication", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "negotiation_basic", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "crossfunctional_collab", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "forecasting", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "pipeline_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

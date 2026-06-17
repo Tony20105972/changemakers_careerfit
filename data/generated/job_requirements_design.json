@@ -1,0 +1,119 @@
+{
+  "profile_id": "design",
+  "profile_name": "Design",
+  "profile_name_ko": "디자인",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "ui_design",
+      "label_ko": "UI 디자인",
+      "description": "인터페이스 시각 디자인",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "prototyping",
+      "label_ko": "프로토타이핑",
+      "description": "Figma 등으로 인터랙티브 프로토타입 제작",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "design_systems",
+      "label_ko": "디자인 시스템",
+      "description": "컴포넌트 라이브러리 및 디자인 가이드 운영",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "user_research",
+      "label_ko": "사용자 리서치",
+      "description": "인터뷰, 설문, 사용성 테스트",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "description": "내외부 이해관계자와의 효과적 소통",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "stakeholder_management",
+      "label_ko": "이해관계자 관리",
+      "description": "다양한 이해관계자 조율 및 관계 관리",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "wireframing",
+      "label_ko": "와이어프레임",
+      "description": "정보 구조 설계 및 화면 설계도 작성",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "accessibility",
+      "label_ko": "접근성",
+      "description": "웹/앱 접근성 표준 준수 설계",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "design"
+      ]
+    },
+    {
+      "skill_key": "presentation",
+      "label_ko": "발표/프레젠테이션",
+      "description": "데이터와 아이디어를 청중에게 전달",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "design"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

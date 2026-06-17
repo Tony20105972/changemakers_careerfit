@@ -1,0 +1,119 @@
+{
+  "profile_id": "hr",
+  "profile_name": "HR",
+  "profile_name_ko": "인사(HR)",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "recruiting",
+      "label_ko": "채용 관리",
+      "description": "JD 작성, 서류 검토, 면접 진행 등 채용 전 과정",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "training_and_onboarding",
+      "label_ko": "교육/온보딩",
+      "description": "신입·경력 교육 프로그램 설계 및 운영",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "labor_law",
+      "label_ko": "노동법",
+      "description": "근로기준법, 노동관계법령 이해 및 적용",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "payroll",
+      "label_ko": "급여 관리",
+      "description": "급여 계산, 복리후생 설계 및 관리",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "description": "내외부 이해관계자와의 효과적 소통",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "stakeholder_management",
+      "label_ko": "이해관계자 관리",
+      "description": "다양한 이해관계자 조율 및 관계 관리",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "description": "보고서, 기획서, 매뉴얼 등 문서 작성",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "performance_management",
+      "label_ko": "성과 관리",
+      "description": "KPI 설정, 평가 프로세스 운영",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "hr"
+      ]
+    },
+    {
+      "skill_key": "employee_relations",
+      "label_ko": "직원 관계 관리",
+      "description": "직원 고충 처리, 조직문화 관리",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "hr"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

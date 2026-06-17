@@ -1,0 +1,119 @@
+{
+  "profile_id": "product",
+  "profile_name": "Product",
+  "profile_name_ko": "프로덕트",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "product_planning",
+      "label_ko": "제품 기획",
+      "description": "제품 요구사항 정의, PRD 작성",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "roadmap_management",
+      "label_ko": "로드맵 관리",
+      "description": "제품 로드맵 수립 및 우선순위 결정",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "user_research",
+      "label_ko": "사용자 리서치",
+      "description": "인터뷰, 설문, 사용성 테스트",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "ux_sense",
+      "label_ko": "UX 감각",
+      "description": "사용자 경험 설계 및 와이어프레임",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "description": "내외부 이해관계자와의 효과적 소통",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "stakeholder_management",
+      "label_ko": "이해관계자 관리",
+      "description": "다양한 이해관계자 조율 및 관계 관리",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "description": "데이터 수집, 정리, 인사이트 도출",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "sprint_management",
+      "label_ko": "스프린트 관리",
+      "description": "애자일/스크럼 운영 경험",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "product"
+      ]
+    },
+    {
+      "skill_key": "competitive_analysis",
+      "label_ko": "경쟁사 분석",
+      "description": "시장 및 경쟁 제품 분석",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "product"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

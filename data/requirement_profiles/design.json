@@ -1,0 +1,18 @@
+{
+  "profile_id": "design",
+  "profile_name": "Design",
+  "profile_name_ko": "디자인",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "ui_design", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "prototyping", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "design_systems", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "user_research", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "communication", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "stakeholder_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "wireframing", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "accessibility", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "presentation", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

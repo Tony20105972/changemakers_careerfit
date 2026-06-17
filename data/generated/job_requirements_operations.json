@@ -1,0 +1,119 @@
+{
+  "profile_id": "operations",
+  "profile_name": "Operations",
+  "profile_name_ko": "운영(Operations)",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "process_improvement",
+      "label_ko": "프로세스 개선",
+      "description": "업무 효율화, 표준화, 자동화",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "vendor_management",
+      "label_ko": "벤더 관리",
+      "description": "외주/공급업체 선정, 계약, 관계 관리",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "operations_management",
+      "label_ko": "운영 관리",
+      "description": "일상 운영 프로세스 총괄",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "logistics",
+      "label_ko": "물류/공급망",
+      "description": "물류, 재고, 공급망 관리",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "process_design",
+      "label_ko": "프로세스 설계",
+      "description": "업무 절차 설계 및 표준화",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "vendor_coordination",
+      "label_ko": "외부 업체 소통",
+      "description": "협력사/벤더와의 일상적 커뮤니케이션",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "cost_management",
+      "label_ko": "비용 관리",
+      "description": "예산 편성 및 비용 최적화",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "quality_control",
+      "label_ko": "품질 관리 기초",
+      "description": "결과물 검토 및 품질 기준 적용",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "operations"
+      ]
+    },
+    {
+      "skill_key": "coordination",
+      "label_ko": "일정/업무 조율",
+      "description": "여러 팀/부서 간 업무 조율",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "operations"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

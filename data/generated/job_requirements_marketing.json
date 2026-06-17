@@ -1,0 +1,119 @@
+{
+  "profile_id": "marketing",
+  "profile_name": "Marketing",
+  "profile_name_ko": "마케팅",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "campaign_management",
+      "label_ko": "캠페인 관리",
+      "description": "마케팅 캠페인 기획, 실행, 성과 분석",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "seo_sem",
+      "label_ko": "SEO/SEM",
+      "description": "검색 최적화 및 검색광고 운영",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "content_marketing",
+      "label_ko": "콘텐츠 마케팅",
+      "description": "블로그, SNS, 광고 카피 등 콘텐츠 제작",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "brand_management",
+      "label_ko": "브랜드 관리",
+      "description": "브랜드 아이덴티티 관리 및 가이드라인 수립",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "description": "내외부 이해관계자와의 효과적 소통",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "description": "데이터 수집, 정리, 인사이트 도출",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "presentation",
+      "label_ko": "발표/프레젠테이션",
+      "description": "데이터와 아이디어를 청중에게 전달",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "social_media",
+      "label_ko": "소셜 미디어",
+      "description": "SNS 채널 운영 및 커뮤니티 관리",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "marketing"
+      ]
+    },
+    {
+      "skill_key": "marketing_analytics",
+      "label_ko": "마케팅 분석",
+      "description": "GA, 전환율, ROAS 등 마케팅 지표 분석",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "marketing"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "profile_id": "engineering",
+  "profile_name": "Engineering",
+  "profile_name_ko": "엔지니어링",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "software_development",
+      "label_ko": "소프트웨어 개발",
+      "description": "프로그래밍 언어를 활용한 기능 구현",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "code_review",
+      "label_ko": "코드 리뷰",
+      "description": "동료 코드 검토 및 피드백",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "system_design",
+      "label_ko": "시스템 설계",
+      "description": "아키텍처 설계 및 기술적 의사결정",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "debugging",
+      "label_ko": "디버깅",
+      "description": "버그 원인 분석 및 해결",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "description": "보고서, 기획서, 매뉴얼 등 문서 작성",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "problem_solving",
+      "label_ko": "문제 해결",
+      "description": "문제 정의, 원인 분석, 해결책 도출",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "api_design",
+      "label_ko": "API 설계",
+      "description": "RESTful API 등 인터페이스 설계",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "testing_qa",
+      "label_ko": "테스트/QA",
+      "description": "단위/통합 테스트 작성 및 품질 검증",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "engineering"
+      ]
+    },
+    {
+      "skill_key": "crossfunctional_collab",
+      "label_ko": "부서간 협업",
+      "description": "타 부서와의 정기적 협업 프로젝트 경험",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "engineering"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

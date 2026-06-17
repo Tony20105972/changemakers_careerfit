@@ -1,0 +1,18 @@
+{
+  "profile_id": "marketing",
+  "profile_name": "Marketing",
+  "profile_name_ko": "마케팅",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "campaign_management", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "seo_sem", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "content_marketing", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "brand_management", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "communication", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "data_analysis", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "presentation", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "social_media", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "marketing_analytics", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

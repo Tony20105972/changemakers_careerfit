@@ -1,0 +1,18 @@
+{
+  "profile_id": "customer_success",
+  "profile_name": "Customer Success",
+  "profile_name_ko": "고객 성공(Customer Success)",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "customer_onboarding", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "churn_management", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "support_ticketing", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "account_health", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "communication", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "stakeholder_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "customer_feedback_analysis", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "renewal_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "data_analysis", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

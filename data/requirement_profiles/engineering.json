@@ -1,0 +1,18 @@
+{
+  "profile_id": "engineering",
+  "profile_name": "Engineering",
+  "profile_name_ko": "엔지니어링",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "software_development", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "code_review", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "system_design", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "debugging", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "documentation", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "problem_solving", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "api_design", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "testing_qa", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "crossfunctional_collab", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

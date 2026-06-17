@@ -1,0 +1,119 @@
+{
+  "profile_id": "customer_success",
+  "profile_name": "Customer Success",
+  "profile_name_ko": "고객 성공(Customer Success)",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "customer_onboarding",
+      "label_ko": "고객 온보딩",
+      "description": "신규 고객 도입 지원 및 초기 정착",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "churn_management",
+      "label_ko": "이탈 관리",
+      "description": "고객 이탈 신호 감지 및 방지 활동",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "support_ticketing",
+      "label_ko": "고객 지원 티켓 처리",
+      "description": "CS 티켓 응대 및 해결",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "account_health",
+      "label_ko": "계정 헬스 관리",
+      "description": "고객 사용률/만족도 모니터링",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "description": "내외부 이해관계자와의 효과적 소통",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "stakeholder_management",
+      "label_ko": "이해관계자 관리",
+      "description": "다양한 이해관계자 조율 및 관계 관리",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "customer_feedback_analysis",
+      "label_ko": "고객 피드백 분석",
+      "description": "VOC 수집 및 정성/정량 분석",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "renewal_management",
+      "label_ko": "갱신 관리",
+      "description": "계약 갱신율 관리 및 협상",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "customer_success"
+      ]
+    },
+    {
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "description": "데이터 수집, 정리, 인사이트 도출",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "customer_success"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

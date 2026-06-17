@@ -1,0 +1,18 @@
+{
+  "profile_id": "finance",
+  "profile_name": "Finance",
+  "profile_name_ko": "재무/회계",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "financial_modeling", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "budgeting_advanced", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "accounting", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "financial_reporting", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "excel", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "reporting", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "budgeting", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "cost_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "tax_compliance", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

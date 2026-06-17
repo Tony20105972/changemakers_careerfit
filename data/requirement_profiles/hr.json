@@ -1,0 +1,18 @@
+{
+  "profile_id": "hr",
+  "profile_name": "HR",
+  "profile_name_ko": "인사(HR)",
+  "status": "ACTIVE",
+  "weight_source": "MANUAL_V1",
+  "requirements": [
+    {"skill_key": "recruiting", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "training_and_onboarding", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "labor_law", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "payroll", "requirement_type": "UNIQUE", "base_weight": 1, "is_core": true},
+    {"skill_key": "communication", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "stakeholder_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "documentation", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "performance_management", "requirement_type": "COMMON", "base_weight": 1, "is_core": false},
+    {"skill_key": "employee_relations", "requirement_type": "COMMON", "base_weight": 1, "is_core": false}
+  ]
+}

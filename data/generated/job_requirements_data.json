@@ -1,0 +1,119 @@
+{
+  "profile_id": "data",
+  "profile_name": "Data",
+  "profile_name_ko": "데이터",
+  "version": "MANUAL_V1_NORMALIZED",
+  "weight_source": "MANUAL_V1",
+  "weight_policy": {
+    "unique_total": 0.65,
+    "common_total": 0.35,
+    "total": 1.0
+  },
+  "requirements": [
+    {
+      "skill_key": "sql",
+      "label_ko": "SQL",
+      "description": "데이터베이스 쿼리 작성 및 분석",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "python",
+      "label_ko": "Python",
+      "description": "데이터 처리 및 분석을 위한 Python 활용",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "data_visualization",
+      "label_ko": "데이터 시각화",
+      "description": "대시보드, 차트 등 시각화 도구 활용",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "statistics",
+      "label_ko": "통계",
+      "description": "기초 통계, 가설 검정, 회귀 분석",
+      "requirement_type": "UNIQUE",
+      "weight": 0.1625,
+      "is_core": true,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "description": "내외부 이해관계자와의 효과적 소통",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "description": "보고서, 기획서, 매뉴얼 등 문서 작성",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "description": "데이터 수집, 정리, 인사이트 도출",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "ab_testing",
+      "label_ko": "A/B 테스트",
+      "description": "실험 설계 및 통계적 유의성 검증",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "data"
+      ]
+    },
+    {
+      "skill_key": "presentation",
+      "label_ko": "발표/프레젠테이션",
+      "description": "데이터와 아이디어를 청중에게 전달",
+      "requirement_type": "COMMON",
+      "weight": 0.07,
+      "is_core": false,
+      "source_profiles": [
+        "data"
+      ]
+    }
+  ],
+  "validation": {
+    "unique_weight_sum": 0.65,
+    "common_weight_sum": 0.35,
+    "total_weight_sum": 1.0,
+    "requirement_count": 9
+  }
+}

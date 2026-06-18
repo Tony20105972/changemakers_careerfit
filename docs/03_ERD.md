@@ -3,7 +3,7 @@
 **DB:** PostgreSQL
 **Extensions:** `uuid-ossp`
 
-> **v3 핵심 변경:** `reports.target_job_family`(ENUM) → `reports.profile_blend`(JSONB).  
+> **v3.1 핵심 변경:** `reports.target_job_family`(ENUM) → `reports.primary_profile`(TEXT).  
 > `job_requirement_stats`의 `job_family` ENUM 컬럼을 `profile_key`(TEXT, N개 좌표축 식별자)로  
 > 변경 — N은 더 이상 ENUM으로 고정되지 않으며, `job_requirement_profiles` 테이블의  
 > row 추가로 확장 가능.
@@ -18,12 +18,13 @@
 | Report JSON 섹션 | 저장 위치 |
 |-------------------|-----------|
 | 전체 Report JSON | `reports.report_json` (JSONB, 완성본 그대로) |
-| **`meta.profile_blend`** | **`reports.profile_blend` (JSONB, v3 신규)** |
+| **`meta.primary_profile`** | **`reports.primary_profile` (TEXT, v3.1 신규)** |
+| **`meta.secondary_profiles`** | **`reports.secondary_profiles` (TEXT[], v3.1 신규, optional)** |
 | `meta.weight_source`, `meta.confidence_level` | `reports` 컬럼 (v3 신규) |
 | `meta`, `summary` (기타) | `reports` 테이블 컬럼 일부 + `report_scores` |
 | `careerProfile` (extracted_skills 제외) | `career_histories` |
 | `evidenceMapping` | `career_evidences` |
-| **`targetJobAnalysis.unique_requirements`/`common_requirements`** | **`requirement_matches`** (블렌딩 후 결과, `source_profiles` 포함) |
+| **`targetJobAnalysis.unique_requirements`/`common_requirements`** | **`requirement_matches`** (primary_profile 기준 결과, `source_profiles` 포함) |
 | **N개 좌표축 자체 (`profile_pool`)** | **`job_requirement_profiles`** (v3 신규 테이블, ENUM 대체) |
 | `skillMapping`, `scores.breakdown` | `requirement_matches` |
 | `scores.total`, `unique_total`, `common_total`, `core_penalty` | `report_scores` |
@@ -36,7 +37,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                  CareerFit V3 ERD (Profile Blending)                      │
+│                  CareerFit V3.1 ERD (Primary Profile)                     │
 └──────────────────────────────────────────────────────────────────────────┘
 
  ┌──────────────┐         ┌──────────────────────────┐
@@ -54,8 +55,8 @@
  │──────────────────────│ └─────────────────────────────┘                │
  │ id (PK, UUID)        │                                                  │
  │ user_id (FK→users)   │                                                  │
- │ profile_blend (JSONB)│──────────────────────────────────────────────────┘
- │   {"hr":0.81,"operations":0.19}
+ │ primary_profile TEXT │──────────────────────────────────────────────────┘
+ │ secondary_profiles TEXT[]
  │ weight_source        │
  │ confidence_level     │
  │ status               │
@@ -107,7 +108,7 @@
  │ report_id (FK→reports)                             │
  │ requirement_key                                    │
  │ skill_group        (UNIQUE|COMMON)                  │
- │ weight             (블렌딩+재정규화 결과)            │
+ │ weight             (primary_profile requirement)       │
  │ source_profiles    (TEXT[], v3 신규)                │
  │ match_level  (FULL/STRONG/PARTIAL/WEAK/NONE)        │
  │ match_score                                        │
@@ -176,7 +177,8 @@ CREATE TABLE reports (
     id                UUID            PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id           UUID            REFERENCES users(id) ON DELETE SET NULL,
     -- target_job_family job_family NOT NULL,  -- v3: 제거
-    profile_blend     JSONB,          -- v3 신규. {"hr": 0.81, "operations": 0.19}. ANALYZING 완료 후 채워짐
+    primary_profile   TEXT,           -- v3.1 신규. 예: 'hr'. ANALYZING 완료 후 채워짐
+    secondary_profiles TEXT[]         NOT NULL DEFAULT '{}',
     weight_source     TEXT            NOT NULL DEFAULT 'MANUAL_V1'
                        CHECK (weight_source ~ '^(MANUAL_V1|CRAWLED_\d{4}Q[1-4])$'),
     confidence_level  confidence_level_type,  -- ANALYZING 완료 후 채워짐
@@ -194,7 +196,7 @@ CREATE INDEX idx_reports_user_id    ON reports(user_id);
 CREATE INDEX idx_reports_status     ON reports(status);
 CREATE INDEX idx_reports_expires_at ON reports(expires_at);
 CREATE INDEX idx_reports_json       ON reports USING GIN (report_json);
-CREATE INDEX idx_reports_profile_blend ON reports USING GIN (profile_blend);  -- v3 신규
+CREATE INDEX idx_reports_primary_profile ON reports(primary_profile);  -- v3.1 신규
 ```
 
 > `weight_source`를 ENUM이 아닌 `TEXT + CHECK`로 둔 이유: 트랙 2(공고 기반 weight)가  
@@ -276,7 +278,7 @@ CREATE INDEX idx_career_evidences_skill_key ON career_evidences(skill_key);
 
 ### 2.5 `job_requirement_profiles` (v3 신규 — ENUM 기반 `job_requirement_stats` 대체)
 
-각 좌표축(profile)의 requirement 정의. **이 테이블의 row가 곧 블렌딩의 "기저 벡터"다.**
+각 profile의 requirement 정의. **이 테이블의 row가 곧 primary_profile 선택 후 scoring 기준이다.**
 
 ```sql
 CREATE TYPE skill_group AS ENUM ('UNIQUE', 'COMMON');
@@ -328,7 +330,7 @@ SELECT
 FROM job_requirement_stats;
 
 -- 기존 job_requirement_stats, job_family ENUM 타입은 보존하거나 폐기 가능
--- (블렌딩 코드는 job_requirement_profiles만 참조)
+-- (profile selection/scoring 코드는 job_requirement_profiles만 참조)
 ```
 
 > `data/job_requirements_*.json` 10개 (`13_Development_Roadmap.md` Day 6 산출물)는  
@@ -338,7 +340,7 @@ FROM job_requirement_stats;
 
 ### 2.6 `report_scores`
 
-(변경 없음 — v2와 동일. `score_breakdown`은 블렌딩된 결과 반영)
+(변경 없음 — v2와 동일. `score_breakdown`은 primary_profile 결과 반영)
 
 ```sql
 CREATE TABLE report_scores (
@@ -368,7 +370,7 @@ CREATE TABLE requirement_matches (
     report_id               UUID        NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
     requirement_key         TEXT        NOT NULL,
     skill_group             skill_group NOT NULL,
-    weight                  NUMERIC(5,4) NOT NULL,  -- v3: 블렌딩+재정규화 결과
+    weight                  NUMERIC(5,4) NOT NULL,  -- v3.1: primary_profile requirement
     source_profiles         TEXT[]      NOT NULL DEFAULT '{}',  -- v3 신규
     match_level             match_level NOT NULL,
     match_score             NUMERIC(3,2) NOT NULL,
@@ -383,8 +385,8 @@ CREATE INDEX idx_req_matches_report_id ON requirement_matches(report_id);
 ```
 
 > `requirement_matches.weight`는 v2에서 `job_requirement_stats.weight`를 그대로 참조하던 것과 달리,  
-> v3에서는 **이 리포트만의 고유 값**(블렌딩 결과)이다. 따라서 weight를 컬럼으로 직접 저장한다  
-> (v2는 FK 참조로 충분했으나 v3는 매 리포트마다 다른 값이므로 저장이 필수).
+> v3.1에서는 `primary_profile`의 requirement weight를 계산 결과와 함께 저장한다.  
+> profile registry 변경 후에도 과거 리포트 점수가 재현되도록 weight를 컬럼으로 직접 저장한다.
 
 ---
 
@@ -424,12 +426,11 @@ reports                  1 ──── N   requirement_matches
 reports                  1 ──── N   report_gaps
 career_histories         1 ──── N   career_evidences (nullable FK, v3)
 job_requirement_profiles N ─── (참조, FK 아님) ─── requirement_matches.requirement_key
-job_requirement_profiles N ─── (블렌딩 입력) ─── reports.profile_blend (profile_key 매칭)
+job_requirement_profiles N ─── (profile 선택 입력) ─── reports.primary_profile (profile_key 매칭)
 ```
 
-> `reports.profile_blend`의 키(`"hr"`, `"operations"`)는 `job_requirement_profiles.profile_key`를  
-> 가리키지만, FK 제약은 걸지 않는다 (JSONB 키에 FK를 거는 것은 PostgreSQL에서 비표준).  
-> 애플리케이션 레벨에서 블렌딩 시점에 `profile_key`의 존재를 검증한다.
+> `reports.primary_profile`은 `job_requirement_profiles.profile_key`를 가리키지만,  
+> profile registry가 데이터 시딩으로 관리되므로 애플리케이션 레벨에서 존재를 검증한다.
 
 ---
 
@@ -449,23 +450,23 @@ career_evidences (skill_key 매핑, confidence_score, source)
     │
     ▼ job_requirement_profiles 전체(status='ACTIVE') 조회 → N개 좌표축 벡터
     │
-    ▼ 블렌딩 엔진 (06_SCORING_RULES.md §2.5)
-    │   cosine_similarity(user_vector, profile_i) for i in 1..N
-    │   → profile_blend = {profile_key: ratio}
-    │   → 가중합 → 65/35 재정규화 → blended_requirements
+    ▼ profile selector (06_SCORING_RULES.md §2.5)
+    │   target_priority_text hint + profile별 evidence signal
+    │   → primary_profile, secondary_profiles
+    │   → selected_requirements (primary_profile 65/35)
     │
-    ├──► reports.profile_blend (JSONB 저장)
+    ├──► reports.primary_profile / secondary_profiles 저장
     │
-    ▼ 매칭 엔진 (blended_requirements 기준)
+    ▼ 매칭 엔진 (selected_requirements 기준)
     │
-requirement_matches (match_level, weight=블렌딩결과, source_profiles, confidence_total)
+requirement_matches (match_level, weight=primary_profile requirement, source_profiles, confidence_total)
     │
     ├──► report_scores (unique_total/common_total/core_penalty 집계)
     │
     └──► report_gaps (severity 분류)
               │
               ▼
-        report_json (05_REPORT_SCHEMA.md 구조로 직렬화, meta.profile_blend 포함)
+        report_json (05_REPORT_SCHEMA.md 구조로 직렬화, meta.primary_profile 포함)
               │
               ▼
         reports.report_json (JSONB 저장, status=READY)
@@ -485,7 +486,7 @@ requirement_matches (match_level, weight=블렌딩결과, source_profiles, confi
 7.  CREATE TYPE gap_severity
 8.  CREATE TYPE confidence_level_type  -- v3 신규
 9.  CREATE TABLE users
-10. CREATE TABLE reports               -- v3: profile_blend JSONB, weight_source, confidence_level
+10. CREATE TABLE reports               -- v3.1: primary_profile, secondary_profiles, weight_source, confidence_level
 11. CREATE TABLE career_histories
 12. CREATE TABLE career_evidences      -- v3: source 컬럼, career_history_id nullable
 13. CREATE TABLE job_requirement_profiles  -- v3 신규 (job_requirement_stats + job_family ENUM 대체)
@@ -506,10 +507,10 @@ requirement_matches (match_level, weight=블렌딩결과, source_profiles, confi
 | `reports.status` | 폴링 쿼리 |
 | `reports.expires_at` | 만료 정리 배치 |
 | `reports.report_json` (GIN) | JSONB 내부 검색 |
-| **`reports.profile_blend` (GIN, v3 신규)** | "특정 profile_key가 70% 이상 차지한 리포트" 등 분포 분석 쿼리 (§10 §4.3 확장 판단용) |
+| **`reports.primary_profile` (v3.1 신규)** | 대표 프로필별 리포트 분포 분석 |
 | `career_evidences.skill_key` | 스킬별 Evidence 집계 |
 | `requirement_matches.report_id` | 리포트별 매칭 결과 조회 |
-| `job_requirement_profiles(profile_key, status)` | weight 합계 검증 쿼리, 블렌딩 시 ACTIVE 프로필만 로드 |
+| `job_requirement_profiles(profile_key, status)` | weight 합계 검증 쿼리, profile selection 시 ACTIVE 프로필만 로드 |
 
 ---
 
@@ -518,6 +519,6 @@ requirement_matches (match_level, weight=블렌딩결과, source_profiles, confi
 | 문제 | 영향 | 비고 |
 |------|------|------|
 | `requirement_matches.weight`를 매 리포트마다 저장 (v2는 FK 참조로 충분) | 저장 공간 소폭 증가 (리포트당 4~6 UNIQUE + 5 COMMON ≈ 9~11 row) | N=10, 사용자 월 20~30명 규모에서는 무시할 수준 |
-| `reports.profile_blend`의 키가 `job_requirement_profiles.profile_key`를 참조하지만 FK 미적용 | `profile_key`가 오타/누락되어도 DB 레벨에서 감지 안 됨 | 애플리케이션 레벨 검증 필수 (`blend_requirements()` 내부에서 profile_pool 기준으로만 키 생성하므로 실질적 위험은 낮음) |
+| `reports.primary_profile`이 `job_requirement_profiles.profile_key`를 참조하지만 FK 미적용 | `profile_key`가 오타/누락되어도 DB 레벨에서 감지 안 됨 | 애플리케이션 레벨 검증 필수 |
 | `job_requirement_profiles.status`(ACTIVE/DEPRECATED)는 있으나 `CANDIDATE`(검토 대기) 상태가 없음 | N 확장 시 "검토 중" 좌표축을 표현할 방법이 ERD에 없음 | V1에서는 N=10 고정이므로 미해당. N 확장 논의 시 `profile_status` ENUM에 `CANDIDATE` 추가 필요 (`01_PRD.md` §4.3) |
 | `career_evidences.career_history_id` nullable화로 기존 NOT NULL 가정 코드가 있다면 깨질 수 있음 | v2 → v3 마이그레이션 시 애플리케이션 코드 점검 필요 | `chk_career_history_required` CHECK 제약으로 DB 레벨 방어는 되어 있음 |

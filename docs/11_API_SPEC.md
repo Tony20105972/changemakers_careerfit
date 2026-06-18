@@ -5,7 +5,7 @@
 **인증:** V1 없음 (비로그인)
 
 > **v3 변경:** `target_job_family` ENUM 완전 제거. `target_priority_text` 추가.  
-> 응답에서 `target_job_family` → `profile_blend`로 대체.  
+> 응답에서 `target_job_family` → `primary_profile`로 대체.  
 > `INVALID_JOB_FAMILY` 에러 코드 제거.
 
 ---
@@ -61,23 +61,9 @@ Content-Type: application/json
 }
 ```
 
-**Response 422 (입력 가드레일 — v3 신규):**
-```json
-{
-  "error": {
-    "code": "LOW_CONFIDENCE_INPUT",
-    "message": "입력 내용에서 충분한 역량 신호를 감지하지 못했습니다. 담당 업무를 더 구체적으로 작성해주시면 더 정확한 분석이 가능합니다.",
-    "confidence_level": "BLOCKED",
-    "suggestion": "responsibilities 항목에 구체적인 업무명, 사용한 도구, 수행한 역할을 포함해주세요."
-  }
-}
-```
-
-> 단, 사용자가 "그래도 분석하기"를 선택하면 `force: true` 파라미터로 재요청 가능:
-> ```json
-> { "target_priority_text": "...", "career_histories": [...], "force": true }
-> ```
-> `force: true`일 때는 BLOCKED 상태도 진행하며, `meta.confidence_level = "LOW"`로 기록됨.
+> LOW confidence 입력도 201로 접수된다. 분석 불가로 422를 반환하지 않으며,  
+> 완료 리포트의 `meta.confidence_level="LOW"`와 `meta.warning_message`로 안내한다.  
+> `force: true`는 v3.1에서 deprecated이며 사용할 필요가 없다.
 
 ---
 
@@ -98,16 +84,19 @@ Content-Type: application/json
       "generated_at": "2025-06-01T12:03:45Z",
       "engine_version": "3.0.0",
       "llm_used": true,
-      "profile_blend": { "hr": 0.81, "operations": 0.19 },
+      "primary_profile": "hr",
+      "secondary_profiles": ["operations"],
       "weight_source": "MANUAL_V1",
-      "confidence_level": "HIGH"
+      "confidence_level": "HIGH",
+      "evidence_count": 10,
+      "warning_message": null
     }
   }
 }
 ```
 
 > v2의 `"target_job_family": "HR"` 응답 필드가 제거됨.  
-> 대신 `report.meta.profile_blend`에서 블렌딩 결과를 확인한다.
+> 대신 `report.meta.primary_profile`에서 대표 프로필을 확인한다.
 
 **Response 200 (진행 중):**
 ```json
@@ -157,7 +146,8 @@ Content-Disposition: attachment; filename="careerfit-{report_id}.pdf"
 |------|------|------|
 | `VALIDATION_ERROR` | 400 | 입력값 유효성 오류 (길이 등) |
 | ~~`INVALID_JOB_FAMILY`~~ | ~~400~~ | **v3에서 제거** |
-| **`LOW_CONFIDENCE_INPUT`** | 422 | **v3 신규.** Evidence confidence 총량 부족 (BLOCKED). `force: true`로 우회 가능 |
+| ~~`LOW_CONFIDENCE_INPUT`~~ | ~~422~~ | **v3.1에서 deprecated.** LOW는 정상 리포트로 생성 |
+| ~~`INSUFFICIENT_EVIDENCE`~~ | ~~422~~ | **v3.1에서 deprecated.** 분석 불가 차단 없음 |
 | `REPORT_NOT_FOUND` | 404 | report_id 없음 |
 | `REPORT_EXPIRED` | 410 | 리포트 만료 |
 | `REPORT_STILL_PROCESSING` | 202 | 아직 생성 중 |
@@ -173,7 +163,7 @@ Content-Disposition: attachment; filename="careerfit-{report_id}.pdf"
 | Method | Path | 설명 |
 |--------|------|------|
 | POST | /admin/sync-job-postings | 사람인/워크넷 공고 동기화 → `job_requirement_profiles.weight` 갱신 (트랙 2) |
-| GET | /profiles | N개 블렌딩 좌표축 목록 + 고유/공통 스킬 구성 |
+| GET | /profiles | N개 requirement profile 목록 + 고유/공통 스킬 구성 |
 | GET | /profiles/{profile_key}/requirements | 좌표축별 요구사항 |
 | GET | /reports/{id}/share | 공유 링크 생성 |
 | GET | /reports/{id}/market-analysis | `marketAnalysis` 섹션 (V1.1) |
@@ -184,5 +174,5 @@ Content-Disposition: attachment; filename="careerfit-{report_id}.pdf"
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| `LOW_CONFIDENCE_INPUT` 422와 클라이언트의 `force: true` 재요청 흐름이 2-round-trip을 요구 | UX상 지연 + 구현 복잡도 | `02_USER_FLOW.md` §2.2의 확인 모달이 이 흐름을 사전에 처리하므로, 정상 클라이언트(웹)에서는 1-round-trip (서버사이드 422는 API 직접 호출 시 방어용) |
-| `profile_blend` 응답이 `float` 정밀도 이슈(Python `round(0.81, 4)` 등)로 인해 합계가 정확히 1.0이 아닐 수 있음 | API 응답 신뢰성 저하 | 반드시 `_fix_rounding`(`06_SCORING_RULES.md` §2.5.4) 통과 후 직렬화. JSON 응답에서 소수점 4자리 고정 |
+| LOW 입력도 성공 응답으로 진행됨 | 사용자가 결과를 과신할 수 있음 | `warning_message`를 화면/PDF에서 필수 표시 |
+| `primary_profile` fallback이 사용자 의도와 다를 수 있음 | 낮은 근거 입력에서 추천 방향이 부정확할 수 있음 | `evidence_count`와 추가 입력 권장 문구를 함께 제공 |

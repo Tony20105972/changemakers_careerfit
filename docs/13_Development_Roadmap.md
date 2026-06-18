@@ -1,27 +1,28 @@
 # 13 — Development Roadmap (v3)
 
 > **현재 상태:**  
-> - `docs/00~13` (14개) 전체 v3 블렌딩 체계로 재작성 완료  
+> - `docs/00~13` (14개) 전체 v3.1 primary_profile 체계로 재정리  
 > - `data/skill_taxonomy.json` (80개), `data/job_requirements_*.json` × 10 생성 완료 (Day 6 산출물)  
 > - `scripts/generate_requirements.py` — weight 자동 배분 + 검증 완료 (10/10 통과)  
 >
-> **다음 작업:** Day 7 (sample_input/report 손작성 — HR dominant + MIXED 2종)
+> **다음 작업:** Day 7 (sample_input/report 손작성 — dominant, mixed, LOW)
 
 ---
 
 # WEEK 1 (잔여) — Day 7
 
-## Day 7 — Sample Input + Sample Report (두 케이스 손작성)
+## Day 7 — Sample Input + Sample Report (primary_profile 기준)
 
 ### 두 케이스를 손으로 작성하는 이유
 
-v3에서 블렌딩 결과는 입력마다 다르다. Week 2 엔진 검증을 위해  
-**"정답 fixture" 역할을 하는 두 케이스**가 필요하다:
+v3.1에서 모든 입력은 `primary_profile`을 선택하고 report_json을 생성한다. Week 2 엔진 검증을 위해  
+**"정답 fixture" 역할을 하는 케이스**가 필요하다:
 
 | 케이스 | 파일명 | 특징 |
 |--------|--------|------|
-| HR dominant | `output/sample_input_hr_dominant.json` | user_vector가 HR과 높은 유사도, blend_display_mode=SINGLE |
-| MIXED | `output/sample_input_mixed.json` | Marketing + Data 혼합, blend_display_mode=MIXED |
+| Dominant | `output/sample_input_*_dominant.json` | 해당 primary_profile의 UNIQUE skill 4개 이상 커버 |
+| Mixed | `output/sample_input_*_mixed.json` | primary_profile 1개 + secondary_profiles 1~2개 |
+| LOW | `output/sample_input_low_confidence.json` | evidence_count 0~4, fallback_profile로 리포트 생성 |
 
 ### 작업 순서
 
@@ -29,8 +30,8 @@ v3에서 블렌딩 결과는 입력마다 다르다. Week 2 엔진 검증을 위
 1. sample_input 작성 (career_histories + target_priority_text)
 2. 08_EVIDENCE_RULES.md로 evidences[] 수작업 추출
 3. user_vector 계산 ({skill_key: confidence_total})
-4. 06_SCORING_RULES.md §2.5 알고리즘으로 profile_blend 수계산
-5. blended_requirements 도출 (renormalize_to_65_35)
+4. 06_SCORING_RULES.md §2.5 알고리즘으로 primary_profile 선택
+5. selected_requirements 도출 (primary_profile requirement)
 6. matchLevel 결정 (06_SCORING_RULES.md §4)
 7. 점수 계산 (unique_total, common_total, core_penalty, total)
 8. 05_REPORT_SCHEMA.md 12개 top-level key 전부 실제 값으로 채움
@@ -40,20 +41,26 @@ v3에서 블렌딩 결과는 입력마다 다르다. Week 2 엔진 검증을 위
 
 ```
 [ ] sample_input_hr_dominant.json + sample_report_hr_dominant.json
-    - profile_blend: {hr: >= 0.7} (SINGLE 케이스)
+    - primary_profile: "hr"
     - meta.confidence_level: HIGH
     - 12개 top-level key 전부 실제 값, null 없음
 
-[ ] sample_input_mixed.json + sample_report_mixed.json
-    - profile_blend: 최댓값 < 0.7 (MIXED 케이스, 예: {marketing: 0.55, data: 0.45})
-    - summary.blend_display_mode: "MIXED"
-    - blend_description: "MIXED_2" 템플릿 적용
+[ ] mixed fixture + sample_report
+    - primary_profile 1개 명확
+    - secondary_profiles 1~2개 명확
+    - summary.primary_profile_summary 템플릿 적용
+
+[ ] low_confidence fixture + sample_report
+    - confidence_level: LOW
+    - evidence_count 0~4
+    - warning_message 필수
+    - report_json 생성 성공
 
 [ ] 두 report의 key 구조 동일 (05_REPORT_SCHEMA.md 부록 검증 스크립트 통과)
 [ ] unique_total + common_total == total (각 케이스)
-[ ] Σ profile_blend == 1.0 (각 케이스)
-[ ] Σ blended_requirements weight (UNIQUE) == 0.65 (각 케이스)
-[ ] Σ blended_requirements weight (COMMON) == 0.35 (각 케이스)
+[ ] primary_profile expected 값 일치 (각 케이스)
+[ ] Σ selected_requirements weight (UNIQUE) == 0.65 (각 케이스)
+[ ] Σ selected_requirements weight (COMMON) == 0.35 (각 케이스)
 ```
 
 ---
@@ -61,53 +68,48 @@ v3에서 블렌딩 결과는 입력마다 다르다. Week 2 엔진 검증을 위
 # WEEK 2 — Engine Week
 
 **목표:** `sample_input_*.json` → (엔진) → Day 7의 sample_report와 구조 일치하는 결과 자동 생성.  
-**v3 추가:** `blend_profiles.py` (블렌딩 코어)를 Day 8에 먼저 완성하고, 나머지 모듈이 임포트.
+**v3.1 추가:** `profile_selector.py`를 Day 8에 먼저 완성하고, 나머지 모듈이 임포트.
 
 ---
 
-## Day 8 — blend_profiles.py (v3 핵심 신규)
+## Day 8 — profile_selector.py (v3.1 핵심 신규)
 
-### 작업: `scripts/blend_profiles.py`
+### 작업: `scripts/profile_selector.py`
 
-`06_SCORING_RULES.md` §2.5의 모든 함수를 구현한다.
+`06_SCORING_RULES.md` §2.5~2.6의 모든 함수를 구현한다.
 
 ```python
-# 구현 대상 함수 (06_SCORING_RULES.md §2.5에서 그대로 복사 후 구현)
-cosine_similarity(vec_a, vec_b) -> float
-compute_blend_weights(user_vector, profile_pool) -> dict[str, float]
-blend_requirements(user_vector, profile_pool) -> tuple[dict, list[Requirement]]
-renormalize_to_65_35(blended, skill_groups, source_profiles) -> list[Requirement]
-_fix_rounding(requirements, group, target) -> None
-validate_blended_weights(requirements) -> None
-
-# 추가 구현
-determine_blend_display_mode(profile_blend) -> str  # 06_SCORING_RULES.md §2.7
-determine_confidence_level(user_vector) -> str       # 06_SCORING_RULES.md §2.6
+score_profile_signal(user_vector, requirements) -> float
+detect_profile_hint(target_priority_text, profile_pool) -> str | None
+select_primary_profile(user_vector, target_priority_text, profile_pool) -> tuple[str, list[str]]
+select_requirements(primary_profile, profile_pool) -> list[Requirement]
+determine_confidence_level(evidence_count) -> str
+build_warning_message(confidence_level) -> str | None
 ```
 
 ### 단위 테스트 (수작업 케이스로 검증)
 
 ```bash
-python scripts/blend_profiles.py \
+python scripts/profile_selector.py \
   --user_vector '{"recruiting": 1.9, "training_and_onboarding": 1.85, "payroll": 1.9}' \
   --profile_pool data/
 
 # 예상 출력:
-# profile_blend = {"hr": X, "operations": Y, ...}
-# blend_display_mode = SINGLE (if hr >= 0.7)
-# Σ blended weight (UNIQUE) = 0.65 ✓
-# Σ blended weight (COMMON) = 0.35 ✓
+# primary_profile = "hr"
+# secondary_profiles = [...]
+# confidence_level = HIGH|MEDIUM|LOW
+# Σ selected weight (UNIQUE) = 0.65 ✓
+# Σ selected weight (COMMON) = 0.35 ✓
 ```
 
 ### 완료 기준
 
 ```
-[ ] cosine_similarity — 동일 입력 3회 동일 결과 (결정론 확인)
-[ ] validate_blended_weights — HR dominant 케이스 통과
-[ ] validate_blended_weights — MIXED 케이스 통과
-[ ] compute_blend_weights — 모든 유사도가 0인 입력에서 ValueError (BLOCKED 케이스 확인)
-[ ] renormalize_to_65_35 — _fix_rounding 후 합계가 0.6500, 0.3500 (±0.001)
-[ ] sample_report_hr_dominant.json의 profile_blend와 수작업 계산값 일치
+[ ] select_primary_profile — 동일 입력 3회 동일 결과
+[ ] HR dominant → primary_profile="hr"
+[ ] MIXED → primary_profile + secondary_profiles 일치
+[ ] LOW → confidence_level="LOW", fallback_profile="operations" 가능
+[ ] selected_requirements 합계 UNIQUE=0.65, COMMON=0.35
 ```
 
 ---
@@ -137,27 +139,27 @@ def extract_evidences_from_all_sources(
 
 ---
 
-## Day 10 — Requirement Matcher + Scoring (블렌딩 기반)
+## Day 10 — Requirement Matcher + Scoring (primary_profile 기반)
 
 ### 작업: `engine/requirement_matcher.py`, `engine/scoring_engine.py`
 
 ```python
-def match_requirements(evidences, blended_requirements) -> list[RequirementMatch]:
+def match_requirements(evidences, selected_requirements) -> list[RequirementMatch]:
     """06_SCORING_RULES.md §4 determine_match_level() 사용.
-       blended_requirements의 weight(블렌딩 결과)를 그대로 사용."""
+       selected_requirements의 weight를 그대로 사용."""
 
-def calculate_score(matches, blended_requirements) -> ScoreResult:
-    """06_SCORING_RULES.md §1, §6 구현. 블렌딩 후에도 65/35 불변."""
+def calculate_score(matches, selected_requirements) -> ScoreResult:
+    """06_SCORING_RULES.md §1, §6 구현. primary_profile 65/35 불변."""
 ```
 
 ### 완료 기준
 
 ```
 [ ] HR dominant: unique_total + common_total == total (±0.1)
-[ ] MIXED: unique_total ≤ 65, common_total ≤ 35
+[ ] LOW: confidence_level=LOW여도 점수 계산 성공
 [ ] 3회 실행 동일 점수 (결정론)
 [ ] 06_SCORING_RULES.md §10 불변규칙 1~12 assert 통과
-[ ] confidence_level = BLOCKED 시 match_requirements 호출 전 차단 확인
+[ ] 분석 차단 상태 enum 또는 분석 차단 경로 없음
 ```
 
 ---
@@ -167,18 +169,18 @@ def calculate_score(matches, blended_requirements) -> ScoreResult:
 ### 작업: `engine/gap_analyzer.py`, `engine/strength_selector.py`
 
 ```python
-def analyze_gaps(matches, blended_requirements) -> list[Gap]:
-    """06_SCORING_RULES.md §8. is_core 전파 규칙(source_profiles 중 하나라도 true면 true) 적용."""
+def analyze_gaps(matches, selected_requirements) -> list[Gap]:
+    """06_SCORING_RULES.md §8. primary_profile requirement 기준."""
 
-def select_strengths(matches, blended_requirements) -> list[Strength]:
+def select_strengths(matches, selected_requirements) -> list[Strength]:
     """06_SCORING_RULES.md §9. UNIQUE 우선."""
 ```
 
 ### 완료 기준
 
 ```
-[ ] MIXED 케이스에서 source_profiles=["hr", "operations"] 복합 requirement의 gap severity 정확
-[ ] is_core 전파: HR에서 is_core=true였던 recruiting이 MIXED 블렌딩 후에도 is_core=true
+[ ] MIXED 케이스에서 secondary_profiles가 gap severity를 변경하지 않음
+[ ] is_core는 primary_profile registry 기준
 [ ] COMMON + CRITICAL 조합 없음 (불변규칙 확인)
 [ ] strengths rank 1, 2가 가능하면 UNIQUE
 ```
@@ -192,8 +194,8 @@ def select_strengths(matches, blended_requirements) -> list[Strength]:
 `09_TEXT_TEMPLATE_RULES.md` §1~7 전체 구현:
 
 ```python
-build_blend_display(profile_blend, blend_display_mode, profile_label_lookup) -> str
-build_blend_description(profile_blend, blend_display_mode, profile_label_lookup) -> str
+build_primary_profile_summary(primary_profile, secondary_profiles, confidence_level) -> str
+build_low_confidence_warning(confidence_level, evidence_count) -> str | None
 select_split_template(unique_score, common_score) -> str
 # strengths/gaps/recommendations 템플릿 전부 포함
 polish_text(template_text) -> str  # LLM 폴백 구조 포함
@@ -202,8 +204,9 @@ polish_text(template_text) -> str  # LLM 폴백 구조 포함
 ### 완료 기준
 
 ```
-[ ] HR dominant → blend_description: "SINGLE" 템플릿
-[ ] MIXED → blend_description: "MIXED_2" 템플릿 (2개 프로필 이름 + %)
+[ ] HR dominant → primary_profile_summary 템플릿
+[ ] MIXED → primary_profile + secondary_profiles 설명
+[ ] LOW → warning_message 필수
 [ ] LLM 없이 모든 텍스트 필드 채워짐 (폴백 동작)
 [ ] priority_clause: target_priority_text 유래 강점에만 추가
 ```
@@ -217,16 +220,16 @@ polish_text(template_text) -> str  # LLM 폴백 구조 포함
 ```python
 def build_report(
     report_id, target_priority_text,
-    evidences, user_vector, profile_blend, blended_requirements,
+    evidences, user_vector, primary_profile, secondary_profiles, selected_requirements,
     matches, score, gaps, strengths, recommendations, roadmap,
     weight_source="MANUAL_V1"
 ) -> dict:
     return {
-        "meta": build_meta(report_id, profile_blend, weight_source),
-        "summary": build_summary(score, matches, profile_blend, ...),
+        "meta": build_meta(report_id, primary_profile, secondary_profiles, weight_source, confidence_level),
+        "summary": build_summary(score, matches, primary_profile, ...),
         "careerProfile": build_career_profile(career_histories, evidences),
-        "targetJobAnalysis": build_target_job(profile_blend, blended_requirements, matches),
-        "skillMapping": build_skill_mapping(matches, blended_requirements),
+        "targetJobAnalysis": build_target_job(primary_profile, selected_requirements, matches),
+        "skillMapping": build_skill_mapping(matches, selected_requirements),
         "evidenceMapping": build_evidence_mapping(evidences),
         "scores": score.dict(),
         "strengths": [s.dict() for s in strengths],
@@ -240,11 +243,11 @@ def build_report(
 ### 완료 기준
 
 ```
-[ ] HR dominant + MIXED 각각 generated_report.json 자동 생성 성공
-[ ] meta.profile_blend 포함, Σ == 1.0
+[ ] HR dominant + MIXED + LOW 각각 generated_report.json 자동 생성 성공
+[ ] meta.primary_profile 포함
 [ ] targetJobAnalysis.unique_requirements[].source_profiles 포함
 [ ] evidenceMapping에 source="target_priority_text" 항목 포함
-[ ] summary.blend_description, blend_display_mode 정확
+[ ] summary.primary_profile_summary, LOW warning 정확
 ```
 
 ---
@@ -266,13 +269,13 @@ done
 ```
 [ ] 2개 케이스 generated_report 생성 성공
 [ ] generated_report 구조 == sample_report 구조 (05_REPORT_SCHEMA.md 부록 스크립트)
-[ ] HR dominant: blend_display_mode = SINGLE
-[ ] MIXED: blend_display_mode = MIXED, blend_description에 2개 프로필 이름
-[ ] 06_SCORING_RULES.md §10 불변규칙 1~12 전부 assert 통과
-[ ] 3회 실행 동일 결과 (결정론, 블렌딩 포함)
+[ ] HR dominant: primary_profile = "hr"
+[ ] MIXED: primary_profile + secondary_profiles 정확
+[ ] LOW: confidence_level=LOW, warning_message 포함
+[ ] 06_SCORING_RULES.md §10 불변규칙 전부 assert 통과
+[ ] 3회 실행 동일 결과 (결정론)
 [ ] LLM 없이 완성 (이 시점 LLM 연동 없음)
-[ ] profile_blend Σ == 1.0 (각 케이스)
-[ ] blended UNIQUE Σ == 0.65, COMMON Σ == 0.35 (각 케이스)
+[ ] selected UNIQUE Σ == 0.65, COMMON Σ == 0.35 (각 케이스)
 [ ] (선택) 나머지 8개 좌표축 조합으로 임의 입력 생성 후 에러 없이 report 생성 확인
 ```
 
@@ -285,24 +288,24 @@ done
 
 # WEEK 3 — Product Week
 
-## Day 15 — HTML Renderer (블렌딩 시각화 포함)
+## Day 15 — HTML Renderer (primary_profile 표시 포함)
 
 ```
 backend/pdf/templates/
 ├── report.html.j2
 ├── partials/
-│   ├── summary.html.j2      ← blend_description 박스 + 수평 막대 (CSS width %)
-│   ├── target_job.html.j2   ← profile_blend 막대 + source_profiles 배지 [HR][Ops]
+│   ├── summary.html.j2      ← primary_profile_summary + LOW warning
+│   ├── target_job.html.j2   ← primary_profile + source_profiles 보조 배지
 │   └── (나머지 10개)
-└── static/report.css        ← --color-blend-1/2/3, --color-source-badge 추가
+└── static/report.css        ← --color-warning, --color-source-badge 추가
 ```
 
 ### 완료 기준
 
 ```
-[ ] output/sample_report_hr_dominant.html — Section 2에 SINGLE 블렌딩 박스
-[ ] output/sample_report_mixed.html — Section 2에 MIXED 블렌딩 박스 (막대 2개)
-[ ] Section 4: source_profiles 배지 [HR], [Ops] 확인
+[ ] output/sample_report_hr_dominant.html — Section 2에 Primary Profile Selection 박스
+[ ] output/sample_report_mixed.html — Section 2에 primary + secondary 설명
+[ ] LOW report — warning banner 확인
 [ ] 흑백 출력 시에도 UNIQUE/COMMON 텍스트 라벨로 구분 가능
 ```
 
@@ -338,9 +341,8 @@ def generate_pdf(html_content: str, output_path: str) -> None:
 
 ```python
 POST /reports      # target_priority_text 필수, target_job_family 없음
-                   # BLOCKED 시 422 LOW_CONFIDENCE_INPUT
-                   # force=true 파라미터 지원
-GET  /reports/{id} # profile_blend 포함 응답
+                   # LOW도 201/READY 리포트 생성
+GET  /reports/{id} # primary_profile 포함 응답
 GET  /reports/{id}/pdf
 ```
 
@@ -349,9 +351,9 @@ GET  /reports/{id}/pdf
 ```
 [ ] target_job_family 필드 전송해도 무시 (하위 호환)
 [ ] target_priority_text 30자 미만 → VALIDATION_ERROR
-[ ] BLOCKED 상태 → LOW_CONFIDENCE_INPUT 422
-[ ] force=true → BLOCKED에도 분석 진행, confidence_level="LOW"
-[ ] GET 응답에 profile_blend 포함 확인
+[ ] LOW 입력도 422 없이 생성 진행
+[ ] confidence_level="LOW" + warning_message 포함
+[ ] GET 응답에 primary_profile 포함 확인
 ```
 
 ---
@@ -363,16 +365,16 @@ GET  /reports/{id}/pdf
 1. `03_ERD.md` v3 migration 실행 (ENUM 6종 → job_requirement_profiles 테이블 포함)
 2. `data/job_requirements_*.json` 10개 → `job_requirement_profiles` 테이블 시딩
 3. 시딩 후 weight 합계 검증 쿼리 실행 (UNIQUE=0.65, COMMON=0.35 × 10개 profile_key)
-4. `reports.profile_blend` (JSONB, GIN 인덱스) 저장 확인
+4. `reports.primary_profile`, `reports.secondary_profiles`, `reports.confidence_level` 저장 확인
 
 ### 완료 기준
 
 ```
 [ ] job_requirement_profiles: 10개 profile_key × 9개 requirement = 90행
 [ ] weight 합계 검증 쿼리: 10개 전부 UNIQUE=0.65, COMMON=0.35
-[ ] reports.profile_blend JSONB 저장 + GIN 인덱스 생성 확인
+[ ] reports.primary_profile 저장 확인
 [ ] career_evidences: source 컬럼, career_history_id nullable FK 확인
-[ ] BLOCKED confidence_level의 경우 reports 테이블에 confidence_level='LOW' 저장 확인
+[ ] LOW confidence의 경우 reports 테이블에 confidence_level='LOW' 저장 확인
 ```
 
 ---
@@ -384,8 +386,8 @@ GET  /reports/{id}/pdf
 ```
 /             Landing (예시 카드 5~6개, Job Family 그리드 없음)
 /report/new   Form (target_priority_text textarea, career_histories, select 없음)
-              서버 422 LOW_CONFIDENCE_INPUT → 모달 ([수정하기] / [그래도 분석하기])
-/report/:id   Result → profile_blend 막대 + blend_description 표시
+              LOW 입력도 제출 가능, 보완 안내는 사전 도움말로만 표시
+/report/:id   Result → primary_profile_summary 표시
               confidence_level=LOW → 안내 배너
               PDF 다운로드 버튼
 ```
@@ -395,8 +397,8 @@ GET  /reports/{id}/pdf
 ```
 [ ] Landing에 "직무 선택 없이 자유롭게 입력" UX 전달
 [ ] Form: target_priority_text textarea + 최소 30자 가이드
-[ ] Form: 422 수신 시 확인 모달 → force=true 재요청
-[ ] Result: meta.profile_blend → 수평 막대 차트 렌더링 (CSS only)
+[ ] Form: LOW 입력도 차단 없이 제출
+[ ] Result: meta.primary_profile 표시
 [ ] Result: confidence_level=LOW → 배너 표시
 [ ] PDF 다운로드 동작
 ```
@@ -410,11 +412,11 @@ GET  /reports/{id}/pdf
 ```
 [ ] target_priority_text 30자 경계값 테스트
 [ ] career_histories 1개 / 10개 엣지 케이스
-[ ] user_vector가 거의 zero vector인 경우 (BLOCKED) 정상 422 반환 확인
+[ ] user_vector가 거의 zero vector인 경우 LOW 리포트 생성 확인
 [ ] LLM 실패 시 폴백 동작 (09_TEXT_TEMPLATE_RULES.md §8)
-[ ] profile_blend Σ == 1.0인지 응답에서 확인 (부동소수점 누적 오차 방어)
+[ ] primary_profile fallback이 결정론적으로 선택되는지 확인
 [ ] CORS 설정
-[ ] MIXED 케이스에서 blend_description 문장이 모든 브라우저에서 정상 렌더링
+[ ] MIXED 케이스에서 secondary_profiles 문장이 모든 브라우저에서 정상 렌더링
 ```
 
 ### 오후: Deploy
@@ -437,8 +439,8 @@ FRONTEND_URL (CORS)
 
 ```
 [ ] 실제 URL 접속 가능
-[ ] HR dominant 케이스: 리포트 생성 → blend_display_mode=SINGLE → PDF 다운로드 성공
-[ ] MIXED 케이스: 리포트 생성 → blend_display_mode=MIXED → PDF 다운로드 성공
+[ ] HR dominant 케이스: 리포트 생성 → primary_profile=hr → PDF 다운로드 성공
+[ ] MIXED 케이스: 리포트 생성 → primary_profile + secondary_profiles → PDF 다운로드 성공
 [ ] 생성 소요 시간 ≤ 5분
 [ ] 동일 입력 재실행 시 동일 점수 (배포 환경에서도 결정론 재검증)
 [ ] meta.weight_source = "MANUAL_V1" PDF Section 12에 작은 글씨로 표시 확인
@@ -451,13 +453,13 @@ FRONTEND_URL (CORS)
 | 항목 | v2 | v3 |
 |------|----|----|
 | 직무 입력 방식 | `target_job_family` ENUM select (10개) | `target_priority_text` 자유 텍스트 |
-| Weight 결정 방식 | 선택된 1개 프로필의 고정 weight | N개 프로필과의 코사인 유사도 블렌딩 → 65/35 재정규화 |
-| Report meta | `target_job_family_ko` | `profile_blend`, `weight_source`, `confidence_level` |
-| targetJobAnalysis | 1개 프로필의 9개 requirement | N개 블렌딩 결과, 4~8개 UNIQUE + COMMON, `source_profiles` 배지 |
+| Weight 결정 방식 | 선택된 1개 프로필의 고정 weight | 엔진이 선택한 `primary_profile`의 고정 weight |
+| Report meta | `target_job_family_ko` | `primary_profile`, `secondary_profiles`, `weight_source`, `confidence_level`, `warning_message` |
+| targetJobAnalysis | 1개 프로필의 9개 requirement | primary_profile의 9개 requirement, `source_profiles`는 보조 배지 |
 | evidence 소스 | `career_histories`만 | `career_histories` + `target_priority_text` (듀얼) |
 | DB | `job_requirement_stats(job_family ENUM)` | `job_requirement_profiles(profile_key TEXT)` |
-| ERD | `reports.target_job_family` ENUM | `reports.profile_blend` JSONB |
-| 신규 엔진 모듈 | 없음 | `scripts/blend_profiles.py` |
+| ERD | `reports.target_job_family` ENUM | `reports.primary_profile` TEXT |
+| 신규 엔진 모듈 | 없음 | `scripts/profile_selector.py` |
 | sample fixture | HR, Data 각 1종 | HR dominant, MIXED 각 1종 |
 
 ---
@@ -466,9 +468,9 @@ FRONTEND_URL (CORS)
 
 ```
 1. 오늘 작업이 04 또는 05를 건드리는가? → 문서 먼저 수정했는가?
-2. blended_requirements의 Σ UNIQUE == 0.65, Σ COMMON == 0.35인가?
-3. Σ profile_blend.values() == 1.0인가?
-4. confidence_level = BLOCKED인 경우 blend_requirements()를 호출하는 코드 경로가 없는가?
+2. selected_requirements의 Σ UNIQUE == 0.65, Σ COMMON == 0.35인가?
+3. primary_profile이 유효한 profile key인가?
+4. confidence_level이 HIGH|MEDIUM|LOW만 사용하는가?
 5. original_text를 수정한 코드가 없는가?
 6. 동일 입력 → 동일 출력인가? (외부 모델/랜덤 없음)
 7. target_job_family ENUM, INVALID_JOB_FAMILY가 코드에 남아있지 않은가?
@@ -481,6 +483,6 @@ FRONTEND_URL (CORS)
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| Day 8(blend_profiles.py)이 Week 2의 모든 후속 모듈의 선행 조건 | Day 8에서 막히면 Day 9~13이 연쇄 지연 | 블렌딩 알고리즘 자체는 순수 산술이라 언어/프레임워크 의존성 없음 — 빠른 구현 가능 |
-| MIXED 케이스 sample_report 손작성이 HR dominant보다 복잡 | Day 7 작업량이 v2 대비 약 1.5배 | MIXED 케이스는 "2개 좌표축의 blended_requirements union"이므로 requirement 수가 더 많음 |
-| Render 배포 환경에서 Playwright + 블렌딩 계산이 동시에 동작할 때 메모리 부담 | OOM(Out of Memory) 가능성 | 블렌딩은 순수 딕셔너리 산술이라 메모리 부담 매우 낮음. Playwright만 주의 |
+| Day 8(profile_selector.py)이 Week 2의 모든 후속 모듈의 선행 조건 | Day 8에서 막히면 Day 9~13이 연쇄 지연 | 선택 알고리즘은 순수 산술/규칙 기반이라 빠른 구현 가능 |
+| MIXED 케이스 sample_report가 보조 프로필 설명을 포함 | Day 7 작성 기준 혼동 가능 | 점수/갭/추천은 primary_profile 기준임을 고정 |
+| LOW 케이스도 PDF까지 생성 | 부정확한 결과 과신 가능 | warning_message 필수 표시 |

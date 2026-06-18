@@ -3,10 +3,10 @@
 Report JSON → PDF 변환 규격.  
 PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지 않는다.
 
-> **v3 변경:**  
-> - Section 1(표지)에서 `target_job_family_ko` 단일 라벨 제거 → `blend_description` 또는 상위 프로필명으로 대체  
-> - Section 2(Executive Summary)에 블렌딩 Explanation 박스 추가 (최상단)  
-> - Section 4(Target Job Analysis)에 `profile_blend` 막대 시각화 + `source_profiles` 배지 추가
+> **v3.1 변경:**  
+> - Section 1(표지)에서 `target_job_family_ko` 단일 라벨 제거 → `primary_profile` 라벨로 대체  
+> - Section 2(Executive Summary)에 Primary Profile Selection 박스와 LOW warning banner 추가  
+> - Section 4(Target Job Analysis)는 `primary_profile` requirement 기준으로 렌더링
 
 ---
 
@@ -24,9 +24,7 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 | Danger 색상 | #E53E3E |
 | UNIQUE 강조 색상 | #2B6CB0 (진한 파랑) |
 | COMMON 강조 색상 | #90CDF4 (연한 파랑) |
-| Blend 1위 색상 | #2B6CB0 |
-| Blend 2위 색상 | #4299E1 |
-| Blend 3위 색상 | #90CDF4 |
+| Warning 색상 | #F6AD55 |
 
 ---
 
@@ -40,11 +38,7 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 │         CareerFit                  │
 │   커리어 적합도 전략 리포트          │
 │                                    │
-│   [blend_display_mode=SINGLE]      │
-│   분석 프로필: 인사(HR)             │ ← top_profile_ko (가장 비중 큰 프로필)
-│                                    │
-│   [blend_display_mode=MIXED]       │
-│   분석 프로필: HR 81% + Operations 19%│ ← blend_description 요약
+│   분석 프로필: 인사(HR)             │ ← meta.primary_profile label
 │                                    │
 │   분석 일시: 2025년 6월 1일         │
 │   리포트 ID: 550e8400...            │
@@ -52,7 +46,7 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 └────────────────────────────────────┘
 ```
 
-**데이터 소스:** `meta.profile_blend`, `meta.weight_source`, `meta.generated_at`, `meta.report_id`
+**데이터 소스:** `meta.primary_profile`, `meta.weight_source`, `meta.generated_at`, `meta.report_id`
 
 ---
 
@@ -61,14 +55,14 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 ```
 ┌────────────────────────────────────┐
 │  ┌──────────────────────────────┐  │
-│  │  [블렌딩 Explanation 박스]    │  │  ← v3 신규, 최상단
-│  │  "당신의 경험은 'HR' 특성 81% │  │
-│  │   와 'Operations' 특성 19%가  │  │
-│  │   혼합된 프로필로 분석되었습니다"│  │
-│  │                               │  │
-│  │  ████████████████████░░ HR 81%│  │  ← profile_blend 수평 막대
-│  │  ████░░░░░░░░░░░░░░░░ Ops 19% │  │
+│  │ [Primary Profile Selection]  │  │
+│  │ 대표 프로필: 인사(HR)          │  │
+│  │ 채용·온보딩·급여 근거를 기준으로│  │
+│  │ HR 프로필을 선택했습니다.      │  │
 │  └──────────────────────────────┘  │
+│  [LOW일 때만 warning banner]        │
+│  입력 정보가 부족하여 일부 결과는    │
+│  추정에 기반합니다.                 │
 │                                    │
 │         78.5 / 100                 │
 │           우수 ★★★★☆              │
@@ -88,12 +82,13 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 └────────────────────────────────────┘
 ```
 
-**v3 신규 — 블렌딩 Explanation 박스:**
-- `summary.blend_description` 텍스트
-- `meta.profile_blend` 기준 수평 막대 차트 (ratio 내림차순, 상위 3개만, 나머지는 "기타"로 합산)
-- Blend 1/2/3위 색상(§1)으로 각 막대 색상 구분
+**v3.1 신규 — Primary Profile Selection 박스:**
+- `summary.primary_profile_summary` 텍스트
+- `meta.primary_profile` 라벨 표시
+- `meta.secondary_profiles`는 보조 정보가 필요할 때만 작은 텍스트로 표시
+- `meta.confidence_level == "LOW"`이면 `meta.warning_message` banner 필수 표시
 
-**데이터 소스:** `summary`, `meta.profile_blend`
+**데이터 소스:** `summary`, `meta.primary_profile`, `meta.confidence_level`, `meta.warning_message`
 
 ---
 
@@ -108,23 +103,21 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ---
 
-### Section 4 (order=4): Target Job Analysis (v3 대폭 변경)
+### Section 4 (order=4): Target Job Analysis (v3.1 변경)
 
 ```
-[상단] Profile Blend 시각화
-  HR      ████████████████████████ 81%
-  Operations ████████            19%
+[상단] Primary Profile Selection
+  대표 프로필: 인사(HR)
+  보조 신호: Operations (선택 표시)
 
 [테이블 1] 직무 고유 역량 (UNIQUE, 65%)
 ┌──────────────┬──────┬───────┬────────┬────────────────┐
 │ 역량          │ 비중  │ 핵심  │ 출처   │ 매칭 결과       │
 ├──────────────┼──────┼───────┼────────┼────────────────┤
-│ 채용 관리     │ 13.2%│  ★   │ [HR]   │ FULL           │
-│ 온보딩        │ 13.2%│  ★   │ [HR]   │ FULL           │
-│ 노동법        │ 13.2%│  ★   │ [HR]   │ NONE ⚠         │
-│ 급여 관리     │ 13.2%│       │ [HR]   │ FULL           │
-│ 프로세스 개선 │  3.1%│  ★   │ [Ops]  │ PARTIAL        │
-│ ...           │      │       │        │                │
+│ 채용 관리     │ 16.3%│  ★   │ [HR]   │ FULL           │
+│ 온보딩        │ 16.3%│  ★   │ [HR]   │ FULL           │
+│ 노동법        │ 16.3%│  ★   │ [HR]   │ NONE ⚠         │
+│ 급여 관리     │ 16.3%│  ★   │ [HR]   │ FULL           │
 └──────────────┴──────┴───────┴────────┴────────────────┘
 
 [테이블 2] 범용 역량 (COMMON, 35%)
@@ -136,11 +129,11 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 └──────────────┴──────┴────────────────┴────────────────┘
 ```
 
-- **`source_profiles` 배지:** `[HR]`, `[Ops]` 형태의 작은 배지로 각 역량의 출처 좌표축 표시
+- **`source_profiles` 배지:** `[HR]`, `[Ops]` 형태의 작은 배지는 유지 가능하나 핵심 판단은 `primary_profile` 기준으로 표현
 - `is_core` 항목 ★ 표시, `match_level=NONE`인 is_core 항목 ⚠ 표시
 - 테이블 1 헤더 배경 = UNIQUE 색상(#2B6CB0), 테이블 2 헤더 배경 = COMMON 색상(#90CDF4)
 
-**데이터 소스:** `targetJobAnalysis.profile_blend`, `.unique_requirements`, `.common_requirements`
+**데이터 소스:** `targetJobAnalysis.primary_profile`, `.unique_requirements`, `.common_requirements`
 
 ---
 
@@ -184,9 +177,9 @@ PDF는 Report JSON의 렌더링 결과물이며, Report JSON 없이 생성되지
 
 ### Section 7 (order=7): Fit Score
 
-- 레이더 차트: UNIQUE 4~8개(블렌딩 결과, 가변) + COMMON 5개
+- 레이더 차트: primary_profile UNIQUE 4개 + COMMON 5개
   - UNIQUE 축은 진한 파랑 영역, COMMON 축은 연한 파랑 영역
-- 점수 breakdown 테이블 (블렌딩된 requirement 전체)
+- 점수 breakdown 테이블 (primary_profile requirement 전체)
 - 하단 요약 박스: `unique_total` / `common_total` / `core_penalty` / `total`
 
 **데이터 소스:** `scores`
@@ -290,9 +283,9 @@ backend/pdf/templates/
 ├── report.html.j2
 ├── partials/
 │   ├── cover.html.j2
-│   ├── summary.html.j2           ← v3: blend_description 박스 + 막대 차트 추가
+│   ├── summary.html.j2           ← v3.1: primary_profile_summary + LOW warning
 │   ├── career_profile.html.j2
-│   ├── target_job.html.j2        ← v3: profile_blend 막대 + source_profiles 배지
+│   ├── target_job.html.j2        ← v3.1: primary_profile + source_profiles 배지
 │   ├── skill_mapping.html.j2     ← v3: source_profiles 배지
 │   ├── evidence_mapping.html.j2  ← v3: target_priority_text 출처 표시
 │   ├── fit_score.html.j2
@@ -313,9 +306,7 @@ backend/pdf/templates/
   --color-danger: #E53E3E;
   --color-unique: #2B6CB0;
   --color-common: #90CDF4;
-  --color-blend-1: #2B6CB0;
-  --color-blend-2: #4299E1;
-  --color-blend-3: #90CDF4;
+  --color-warning: #F6AD55;
   --color-source-badge: #EDF2F7;
   --color-match-full: #48BB78;
   --color-match-strong: #9AE6B4;
@@ -331,7 +322,7 @@ backend/pdf/templates/
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| Section 4 테이블 행 수가 가변 (UNIQUE 4~8개) | PDF 레이아웃에서 테이블이 한 페이지를 초과하거나 여백이 과도할 수 있음 | Playwright CSS `page-break-inside: avoid` + 최대 행 수 제한(8개) 권장 |
+| LOW warning banner가 Section 2 공간을 차지함 | Executive Summary가 길어질 수 있음 | LOW일 때만 표시하고 2문장 이내 유지 |
 | `source_profiles` 배지가 여러 개(예: [HR][Ops][Product])이면 셀 넘침 | 표 레이아웃 깨짐 | 최대 2개 배지 표시, 초과 시 "+N" 축약 |
-| Section 2 blend 막대 차트를 HTML/CSS로 구현 시 Playwright 렌더링 지연 가능 | PDF 생성 시간 증가 | 막대 차트는 CSS `width` 퍼센트로 구현 (Canvas/JS 불필요) |
+| source_profiles 배지가 보조 프로필처럼 과해 보일 수 있음 | primary_profile 기준이 흐려질 수 있음 | 배지는 작은 보조 정보로만 표시 |
 | `meta.weight_source` 안내 문구(Section 12)가 기술적으로 들릴 수 있음 | 일반 사용자에게 불필요한 정보처럼 느껴질 가능성 | 폰트 사이즈 8pt, 회색 (#718096)으로 최소 존재감 유지 |

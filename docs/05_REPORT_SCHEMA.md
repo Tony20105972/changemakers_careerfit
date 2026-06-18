@@ -4,19 +4,19 @@
 > Report JSON은 시스템의 **단일 진실 공급원(Single Source of Truth)**이며,  
 > PDF, 화면, API 응답은 모두 이 구조를 파싱해 렌더링한다.
 
-> **v3 핵심 변경:** `meta.target_job_family`(ENUM) → `meta.profile_blend`(object) +  
-> `meta.weight_source`, `meta.confidence_level` 추가. `targetJobAnalysis`는  
-> "선택된 1개 프로필"이 아니라 "블렌딩된 unique/common_requirements"를 담는다.
+> **v3.1 핵심 변경:** `meta.target_job_family`(ENUM) 제거 유지.  
+> `meta.primary_profile`, `meta.secondary_profiles`, `meta.confidence_level`, `meta.evidence_count`,  
+> `meta.warning_message`를 추가한다. `targetJobAnalysis`는 `primary_profile`의 requirement를 기준으로 작성한다.
 
 ---
 
 ## 0. 설계 원칙
 
 1. **모든 필드는 타입과 예시 값을 함께 명시한다.** placeholder가 아닌 실제 값으로 작성한다.
-2. **구조 통일성:** N개 좌표축 중 어떤 비율로 블렌딩되었든, 이 구조의 **key 집합은 100% 동일**하다. 값만 달라진다.
+2. **구조 통일성:** 어떤 입력이든, LOW confidence 포함, Report JSON의 **key 집합은 100% 동일**하다. 값만 달라진다.
 3. **고유(UNIQUE) / 공통(COMMON) 스킬 구분이 스키마 레벨에 반영된다.**
-4. **블렌딩 투명성 (v3 신규):** `meta.profile_blend`가 모든 weight 계산의 "근거"이며, 이 필드 없이는  
-   `targetJobAnalysis`, `scores`의 값이 어떻게 도출되었는지 설명할 수 없다.
+4. **대표 프로필 투명성 (v3.1 신규):** `meta.primary_profile`이 리포트의 점수·갭·추천 기준이다.  
+   입력 근거가 부족하면 `confidence_level=LOW`와 `warning_message`로 명시한다.
 5. 각 섹션 끝에는 **"PDF 렌더링 위치"** 주석이 있다. (`10_PDF_TEMPLATE_SPEC.md`와 연결)
 
 ---
@@ -56,12 +56,12 @@
     "generated_at": "2025-06-01T12:03:45Z",
     "engine_version": "3.0.0",
     "llm_used": true,
-    "profile_blend": {
-      "hr": 0.81,
-      "operations": 0.19
-    },
+    "primary_profile": "hr",
+    "secondary_profiles": ["operations"],
     "weight_source": "MANUAL_V1",
-    "confidence_level": "HIGH"
+    "confidence_level": "HIGH",
+    "evidence_count": 10,
+    "warning_message": null
   }
 }
 ```
@@ -71,12 +71,17 @@
 | `report_id` | string (UUID) | 리포트 식별자 |
 | `generated_at` | string (ISO 8601) | 생성 완료 시각 |
 | ~~`target_job_family`~~ | ~~enum~~ | **v3에서 제거** |
-| ~~`target_job_family_ko`~~ | ~~string~~ | **v3에서 제거** (대신 `profile_blend`의 각 키를 `data/skill_taxonomy.json` 또는 프로필 라벨 lookup으로 변환해 화면/PDF에서 표시) |
+| ~~`target_job_family_ko`~~ | ~~string~~ | **v3에서 제거** |
 | `engine_version` | string (semver) | 엔진 버전 |
 | `llm_used` | boolean | 텍스트 윤색에 LLM이 실제로 사용되었는지 |
-| **`profile_blend`** | object | **v3 신규.** `{profile_key: ratio}`, 합계 1.0. `06_SCORING_RULES.md` §2.5의 블렌딩 결과 |
+| **`primary_profile`** | string | **v3.1 신규.** 엔진이 최종 리포트 기준으로 선택한 대표 profile_id |
+| **`secondary_profiles`** | array<string> | **v3.1 신규, optional.** 일부 근거가 감지된 보조 프로필. 핵심 판단 기준은 아님 |
 | **`weight_source`** | enum | **v3 신규.** `MANUAL_V1 \| CRAWLED_<YYYYQn>`. N개 좌표축(`job_requirements_*.json`)의 weight 출처 (`00_PROJECT_VISION.md` 트랙 2) |
 | **`confidence_level`** | enum | **v3 신규.** `HIGH \| MEDIUM \| LOW`. `04_PAYLOAD_CONTRACT.md`의 동일 필드와 일치 |
+| **`evidence_count`** | integer | **v3.1 신규.** 추출된 evidence 총 개수 |
+| **`warning_message`** | string \| null | **v3.1 신규.** LOW에서는 required. "입력 정보가 부족하여 일부 결과는 추정에 기반합니다" 문구 포함 |
+
+> `profile_blend`는 V1 사용자-facing 핵심 필드에서 제거된다. 필요 시 `internal_debug.profile_blend` optional 필드로만 저장한다.
 
 **PDF 렌더링 위치:** Section 1 (표지) — `report_id`, `generated_at`, `weight_source`(작은 글씨로 데이터 근거 표기)
 
@@ -93,8 +98,7 @@ Executive Summary. 리포트 전체에서 가장 먼저 노출되는 핵심 요�
     "score_label": "우수",
     "fit_level": "GOOD_FIT",
     "one_line": "채용과 온보딩 역량은 시장 기준을 충족하나, 노동법과 급여 관리 보강이 필요합니다.",
-    "blend_description": "당신의 경험은 'HR' 특성 81%와 'Operations' 특성 19%가 혼합된 프로필로 분석되었습니다.",
-    "blend_display_mode": "MIXED",
+    "primary_profile_summary": "입력된 채용, 온보딩, 급여 운영 근거를 기준으로 인사(HR)를 대표 프로필로 선택했습니다.",
     "unique_score": 51.2,
     "unique_score_max": 65.0,
     "common_score": 27.3,
@@ -111,11 +115,10 @@ Executive Summary. 리포트 전체에서 가장 먼저 노출되는 핵심 요�
 | `score_label` | string | 한글 등급 레이블 |
 | `fit_level` | enum | `EXCELLENT_FIT \| GOOD_FIT \| MODERATE_FIT \| LOW_FIT` |
 | `one_line` | string | 템플릿/LLM 생성 한 줄 요약 |
-| **`blend_description`** | string | **v3 신규.** `meta.profile_blend` 기반 자연어 설명. `09_TEXT_TEMPLATE_RULES.md` §2 템플릿 |
-| **`blend_display_mode`** | enum | **v3 신규.** `SINGLE \| MIXED`. 최댓값 유사도 ≥ 0.7 → `SINGLE`, 미만 → `MIXED` (`06_SCORING_RULES.md` §2.5 임계값) |
-| `unique_score` | number | UNIQUE 스킬군(블렌딩된 고유 핵심 역량) 합산 점수, 최대 65.0 |
+| **`primary_profile_summary`** | string | **v3.1 신규.** 대표 프로필 선택 근거 설명. `09_TEXT_TEMPLATE_RULES.md` §2 템플릿 |
+| `unique_score` | number | UNIQUE 스킬군(primary_profile 고유 핵심 역량) 합산 점수, 최대 65.0 |
 | `unique_score_max` | number | 항상 65.0 |
-| `common_score` | number | COMMON 스킬군(블렌딩된 범용 역량) 합산 점수, 최대 35.0 |
+| `common_score` | number | COMMON 스킬군(primary_profile 범용 역량) 합산 점수, 최대 35.0 |
 | `common_score_max` | number | 항상 35.0 |
 | `key_strengths` | array<string> | skill_key 상위 3개 (rank 기준) |
 | `key_gaps` | array<string> | skill_key 상위 2개 (priority_order 기준) |
@@ -129,20 +132,9 @@ Executive Summary. 리포트 전체에서 가장 먼저 노출되는 핵심 요�
 | MODERATE_FIT | 55–74 |
 | LOW_FIT | 0–54 |
 
-> `unique_score + common_score == total_score` (penalty 적용 후 합계가 일치해야 함. `06_SCORING_RULES.md` §6 참조 — 블렌딩 후에도 이 불변규칙은 유지됨)
+> `unique_score + common_score == total_score` (penalty 적용 후 합계가 일치해야 함. `06_SCORING_RULES.md` §6 참조)
 
-**`blend_display_mode` 별 `blend_description` 예시:**
-
-```
-SINGLE (최댓값 >= 0.7):
-  "당신의 경험은 'HR' 직무 특성과 강하게 일치합니다 (유사도 84%)."
-
-MIXED (최댓값 < 0.7):
-  "당신의 경험은 'HR' 특성 52%와 'Operations' 특성 31%가
-   혼합된 프로필로 분석되었습니다."
-```
-
-**PDF 렌더링 위치:** Section 2 (Executive Summary) — 총점 큰 숫자, **블렌딩 Explanation 박스(최상단, v3 신규)**, UNIQUE/COMMON 분리 도넛 차트, one_line, 강점/갭 미리보기
+**PDF 렌더링 위치:** Section 2 (Executive Summary) — 총점 큰 숫자, **Primary Profile Selection 박스**, LOW warning banner, UNIQUE/COMMON 분리 도넛 차트, one_line, 강점/갭 미리보기
 
 ---
 
@@ -180,31 +172,28 @@ MIXED (최댓값 < 0.7):
 }
 ```
 
-> `extracted_skills[].skill_group`은 `meta.profile_blend`에서 가장 비중이 큰 프로필의  
-> `skill_group` 분류를 기준으로 표시한다 (블렌딩된 `targetJobAnalysis.unique_requirements`/  
-> `common_requirements`와 일치시킴 — §4 참조).
+> `extracted_skills[].skill_group`은 `meta.primary_profile`의 requirement 분류를 기준으로 표시한다.
 
 **PDF 렌더링 위치:** Section 3 (Career Profile) — 경력 타임라인 테이블 + 추출 스킬 태그 클라우드
 
 ---
 
-## 4. `targetJobAnalysis` (v3 대폭 변경)
+## 4. `targetJobAnalysis` (v3.1 변경)
 
-> v2: "선택된 1개 Job Family의 요구사항"  
-> v3: "**블렌딩된 결과**로 만들어진, 이 사용자만의 unique/common requirements"
+> v2: "사용자가 선택한 1개 Job Family의 요구사항"  
+> v3.1: "엔진이 선택한 `primary_profile`의 unique/common requirements"
 
 ```json
 {
   "targetJobAnalysis": {
-    "profile_blend": {
-      "hr": 0.81,
-      "operations": 0.19
-    },
+    "primary_profile": "hr",
+    "primary_profile_label_ko": "인사(HR)",
+    "secondary_profiles": ["operations"],
     "unique_requirements": [
       {
         "requirement_key": "recruiting",
         "label_ko": "채용 관리",
-        "weight": 0.158,
+        "weight": 0.1625,
         "is_core": true,
         "match_level": "FULL",
         "source_profiles": ["hr"]
@@ -212,23 +201,15 @@ MIXED (최댓값 < 0.7):
       {
         "requirement_key": "training_and_onboarding",
         "label_ko": "교육/온보딩",
-        "weight": 0.142,
+        "weight": 0.1625,
         "is_core": true,
         "match_level": "FULL",
         "source_profiles": ["hr"]
       },
       {
-        "requirement_key": "process_improvement",
-        "label_ko": "프로세스 개선",
-        "weight": 0.098,
-        "is_core": false,
-        "match_level": "PARTIAL",
-        "source_profiles": ["operations"]
-      },
-      {
         "requirement_key": "labor_law",
         "label_ko": "노동법",
-        "weight": 0.132,
+        "weight": 0.1625,
         "is_core": true,
         "match_level": "NONE",
         "source_profiles": ["hr"]
@@ -236,8 +217,8 @@ MIXED (최댓값 < 0.7):
       {
         "requirement_key": "payroll",
         "label_ko": "급여 관리",
-        "weight": 0.120,
-        "is_core": false,
+        "weight": 0.1625,
+        "is_core": true,
         "match_level": "FULL",
         "source_profiles": ["hr"]
       }
@@ -246,43 +227,35 @@ MIXED (최댓값 < 0.7):
       {
         "requirement_key": "communication",
         "label_ko": "커뮤니케이션",
-        "weight": 0.0735,
+        "weight": 0.07,
         "is_core": false,
         "match_level": "STRONG",
         "source_profiles": ["hr", "operations"]
       }
     ],
-    "requirement_overview": "당신의 경험은 'HR' 특성 81%와 'Operations' 특성 19%가 혼합된 프로필로 분석되었습니다. 채용·온보딩·노동법 등 고유 역량(65%)과 커뮤니케이션 등 범용 역량(35%)을 함께 평가합니다."
+    "requirement_overview": "입력된 근거를 기준으로 인사(HR)를 대표 프로필로 선택했습니다. 채용·온보딩·노동법·급여 관리 등 고유 역량(65%)과 커뮤니케이션 등 범용 역량(35%)을 평가합니다."
   }
 }
 ```
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| **`profile_blend`** | object | `meta.profile_blend`와 동일 (이 섹션 내에서도 참조 가능하도록 중복 포함) |
-| `unique_requirements` | array | 블렌딩 후 `skill_group=UNIQUE`인 requirement 전체. weight 합 = 0.65 |
-| `common_requirements` | array | 블렌딩 후 `skill_group=COMMON`인 requirement 전체. weight 합 = 0.35 |
-| **`unique_requirements[].source_profiles`** | array<string> | **v3 신규.** 이 requirement가 어느 좌표축(profile_key)에서 유래했는지. 여러 프로필에 공통으로 존재하면 배열에 여러 값 |
-| `requirement_overview` | string | 템플릿 생성, `blend_description`과 일관된 내용 |
+| **`primary_profile`** | string | `meta.primary_profile`과 동일 |
+| **`primary_profile_label_ko`** | string | 대표 프로필의 사용자 표시명 |
+| **`secondary_profiles`** | array<string> | 선택. 보조 프로필 목록 |
+| `unique_requirements` | array | `primary_profile`의 `skill_group=UNIQUE` requirement 전체. weight 합 = 0.65 |
+| `common_requirements` | array | `primary_profile`의 `skill_group=COMMON` requirement 전체. weight 합 = 0.35 |
+| `source_profiles` | array<string> | V1에서는 보통 `[primary_profile]`. 보조 프로필 힌트 표시가 필요할 때만 사용 |
+| `requirement_overview` | string | 대표 프로필 선택 설명과 평가 기준 요약 |
 
-> **블렌딩 + 재정규화 규칙 (06_SCORING_RULES.md §2.5):**  
-> N개 프로필의 requirement들을 `profile_blend` 비율로 가중합 → `requirement_key`별로 합산 →  
-> UNIQUE 그룹 합계를 0.65로, COMMON 그룹 합계를 0.35로 재정규화.  
-> 동일 `requirement_key`가 여러 프로필에 존재하면(`source_profiles`에 2개 이상) weight가 가중 합산된다  
-> (예: `communication`이 hr과 operations 양쪽의 COMMON에 있으면 두 기여분이 합산됨).
-
-> `unique_requirements`의 개수는 블렌딩 결과에 따라 4~6개로 가변적일 수 있다  
-> (두 프로필의 UNIQUE 항목 union, 중복 시 병합). weight 합은 항상 0.65다.
-
-**PDF 렌더링 위치:** Section 4 (Target Job Analysis) — **상단에 profile_blend 시각화(막대 또는 도넛, v3 신규)**,  
-2개 테이블 (블렌딩된 고유 요구사항 / 공통 요구사항), `source_profiles`를 작은 배지로 표시,  
-is_core 항목 강조
+**PDF 렌더링 위치:** Section 4 (Target Job Analysis) — Primary Profile Selection 요약,  
+2개 테이블 (대표 프로필 고유 요구사항 / 공통 요구사항), `source_profiles` 배지는 보조 정보로만 표시, is_core 항목 강조
 
 ---
 
 ## 5. `skillMapping`
 
-전체 requirement에 대한 매칭 결과를 FULL~NONE 순으로 정렬. (구조 변경 없음, weight 값이 블렌딩 결과로 대체됨)
+전체 requirement에 대한 매칭 결과를 FULL~NONE 순으로 정렬. (구조 변경 없음, weight 값은 primary_profile requirement 기준)
 
 ```json
 {
@@ -364,7 +337,7 @@ is_core 항목 강조
 
 ## 7. `scores`
 
-점수 계산 결과 전체. (구조 변경 없음 — 단, `breakdown`의 weight가 블렌딩 결과)
+점수 계산 결과 전체. (구조 변경 없음 — 단, `breakdown`의 weight는 primary_profile requirement 기준)
 
 ```json
 {
@@ -400,12 +373,12 @@ is_core 항목 강조
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `total` | number | 최종 점수 (penalty 반영 후, 0–100) |
-| `unique_total` | number | 블렌딩된 UNIQUE 스킬군 weighted_score 합 (penalty 반영 후) |
-| `common_total` | number | 블렌딩된 COMMON 스킬군 weighted_score 합 |
+| `unique_total` | number | primary_profile UNIQUE 스킬군 weighted_score 합 (penalty 반영 후) |
+| `common_total` | number | primary_profile COMMON 스킬군 weighted_score 합 |
 | `core_penalty` | number | `is_core=true`이며 NONE/WEAK인 항목의 페널티 합 |
-| `breakdown` | object | **블렌딩된** requirement 전체 포함 (4~6개 UNIQUE + COMMON 합 union, 가변) |
+| `breakdown` | object | `primary_profile` requirement 전체 포함 |
 
-> `total == round(unique_total + common_total, 1)` 이어야 한다. 블렌딩 후에도 이 불변규칙 유지.
+> `total == round(unique_total + common_total, 1)` 이어야 한다.
 
 **PDF 렌더링 위치:** Section 7 (Fit Score) — 레이더 차트, 점수 breakdown 테이블
 
@@ -414,11 +387,10 @@ is_core 항목 강조
 ## 8~11. `strengths`, `gaps`, `recommendations`, `roadmap`
 
 **구조 변경 없음** (v2와 동일). 단, 이 섹션들이 참조하는 `skill_key`/`weight`/`is_core`는  
-모두 §4의 블렌딩된 `unique_requirements`/`common_requirements`에서 가져온다.
+모두 §4의 `primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
 
 `09_TEXT_TEMPLATE_RULES.md`의 템플릿에서 `{job_family_ko}` 같은 단일 라벨 변수는  
-v3에서 `{blend_description}` 또는 가장 비중이 큰 프로필의 `label_ko`로 대체된다  
-(`09_TEXT_TEMPLATE_RULES.md` 참조).
+v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES.md` 참조).
 
 **PDF 렌더링 위치:** Section 8~11 (변경 없음)
 
@@ -467,7 +439,7 @@ def extract_keys(obj, prefix=""):
         keys |= extract_keys(obj[0], f"{prefix}[]")
     return keys
 
-# 서로 다른 profile_blend 결과를 가진 두 리포트도 key 구조는 100% 동일해야 함
+# 서로 다른 primary_profile 결과를 가진 두 리포트도 key 구조는 100% 동일해야 함
 hr_dominant = json.load(open("output/sample_report_hr_dominant.json"))
 mixed = json.load(open("output/sample_report_mixed.json"))
 
@@ -481,7 +453,7 @@ print("구조 통일성 검증 통과")
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| `unique_requirements`/`common_requirements`의 개수가 가변(4~6개)이라 PDF 테이블 행 수가 리포트마다 다름 | `10_PDF_TEMPLATE_SPEC.md`의 고정 레이아웃 가정과 충돌 가능 | 테이블을 동적 행 수 대응 레이아웃으로 설계 필요 |
-| `source_profiles`가 2개 이상인 requirement의 "어느 프로필에서 왔는지" 표시가 사용자에게 큰 의미가 없을 수 있음 | UI 복잡도 증가 대비 가치가 작을 가능성 | v3.1에서 배지 노출 여부 A/B 검토 |
+| LOW 리포트도 동일 구조를 사용함 | 점수는 산출되지만 신뢰도가 낮을 수 있음 | `meta.warning_message`를 화면/PDF에서 필수 표시 |
+| `source_profiles`가 2개 이상인 requirement의 "어느 프로필에서 왔는지" 표시가 사용자에게 큰 의미가 없을 수 있음 | UI 복잡도 증가 대비 가치가 작을 가능성 | V1에서는 보조 배지로만 표시 |
 | `meta.confidence_level == LOW`인 리포트도 `summary.fit_level`을 동일한 4단계로 표시함 | "낮은 신뢰도"와 "낮은 점수(LOW_FIT)"가 시각적으로 혼동될 위험 | `02_USER_FLOW.md`의 신뢰도 배너가 `fit_level` 표시와 명확히 분리되어야 함 |
-| `blend_display_mode=MIXED`일 때 `requirement_overview` 문장이 두 프로필 이름을 모두 언급해야 해서 문장이 길어짐 | 가독성 저하 가능 | `09_TEXT_TEMPLATE_RULES.md`에서 2개까지만 언급, 3개 이상 혼합 시 "복합적" 등으로 단순화 |
+| fallback으로 `operations`가 선택된 LOW 리포트 | 사용자가 직무 판단을 과신할 수 있음 | `warning_message`와 추가 입력 권장 문구를 함께 표시 |

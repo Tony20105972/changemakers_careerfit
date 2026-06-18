@@ -2,9 +2,9 @@
 
 점수 계산은 **완전 결정론적**이다. 동일한 입력 → 동일한 점수. LLM 개입 없음.
 
-> **v3 핵심 변경:** §2(Weight 자동 배분)는 **좌표축(profile) 생성 알고리즘**으로 역할이  
-> 재정의된다. §2.5(블렌딩), §2.6(confidence_level)이 신규 추가되어, "사용자 입력 →  
-> N개 좌표축과의 유사도 → 맞춤 weight"의 전체 파이프라인을 정의한다.
+> **v3.1 핵심 변경:** §2(Weight 자동 배분)는 **프로필 registry 생성 알고리즘**으로 유지된다.  
+> 런타임 scoring은 항상 `primary_profile`의 requirement를 기준으로 수행한다.  
+> LOW confidence도 차단하지 않고 fallback profile로 report_json을 생성한다.
 
 ---
 
@@ -19,18 +19,18 @@ common_total = Σ (weight × match_score × 100)   for requirement where skill_g
 core_penalty ≤ 0  (§6 참조)
 ```
 
-- **블렌딩 후에도** `Σ weight (UNIQUE) = 0.65`, `Σ weight (COMMON) = 0.35`
+- `primary_profile` requirement는 항상 `Σ weight (UNIQUE) = 0.65`, `Σ weight (COMMON) = 0.35`
 - `match_score` 범위: 0.0 – 1.0
 - 최종 `total_score` 범위: 0 – 100 (음수 방지를 위해 `max(0, ...)` 적용)
 
 ---
 
-## 2. 좌표축(Profile) 생성 — Weight 자동 배분 규칙 (역할 재정의)
+## 2. Requirement Profile Registry 생성 — Weight 자동 배분 규칙
 
-> v2에서 "Job Family weight 자동 배분"이었던 이 절은, v3에서 **"N개 좌표축을 만드는  
+> v2에서 "Job Family weight 자동 배분"이었던 이 절은, v3.1에서 **"N개 requirement profile을 만드는  
 > 1회성 절차"**로 역할이 바뀐다. `13_Development_Roadmap.md` Day 6에서 이미 실행되어  
 > `data/job_requirements_*.json` 10개가 생성되었다 — 이 절은 그 산출물의 생성 방법을  
-> 문서화한 것이며, **§2.5(블렌딩)의 입력(기저 벡터)을 만드는 절차**다.
+> 문서화한 것이며, **§2.5(primary profile 선택)의 입력을 만드는 절차**다.
 
 ### 2.1 입력값 (사람이 정의하는 것 — 좌표축당 1회)
 
@@ -83,7 +83,7 @@ def allocate_weights(core_skill_keys, common_skill_keys, is_core_overrides, skil
     return requirements
 ```
 
-### 2.3 예시 — HR 좌표축 (Day 6 산출물)
+### 2.3 예시 — HR Profile (Day 6 산출물)
 
 ```
 recruiting:               0.1625 (UNIQUE)
@@ -97,7 +97,7 @@ documentation:            0.07   (COMMON)
 coordination:             0.07   (COMMON)
 ```
 
-### 2.4 검증 규칙 (변경 없음 — 좌표축 생성 시 1회 실행)
+### 2.4 검증 규칙 (변경 없음 — profile 생성 시 1회 실행)
 
 ```python
 def validate_job_family_weights(profile_key, requirements):
@@ -109,7 +109,7 @@ def validate_job_family_weights(profile_key, requirements):
 
 ---
 
-## 2.5 프로필 블렌딩 (v3 핵심 신규)
+## 2.5 Primary Profile 선택 (v3.1 핵심)
 
 ### 2.5.1 입력
 
@@ -117,214 +117,76 @@ def validate_job_family_weights(profile_key, requirements):
 user_vector: {skill_key: confidence_total}
     08_EVIDENCE_RULES.md로 career_histories + target_priority_text에서 추출
 
-profile_pool: N개 좌표축 (job_requirement_profiles, status='ACTIVE')
+profile_pool: N개 requirement profile (job_requirement_profiles, status='ACTIVE')
     각 profile_i = {requirement_key: weight}  (§2에서 생성됨, 합계 1.0)
 ```
 
-### 2.5.2 코사인 유사도 (순수 산술)
+### 2.5.2 프로필별 매칭 신호 계산 (순수 산술)
 
 ```python
-def cosine_similarity(vec_a: dict[str, float], vec_b: dict[str, float]) -> float:
-    keys = set(vec_a) | set(vec_b)
-    dot = sum(vec_a.get(k, 0) * vec_b.get(k, 0) for k in keys)
-    norm_a = sum(v ** 2 for v in vec_a.values()) ** 0.5
-    norm_b = sum(v ** 2 for v in vec_b.values()) ** 0.5
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return dot / (norm_a * norm_b)
+def score_profile_signal(user_vector: dict[str, float], requirements: list[Requirement]) -> float:
+    return round(sum(user_vector.get(r.requirement_key, 0.0) for r in requirements), 4)
 ```
 
-> `vec_a`(user_vector)는 confidence_total(0~수, 보통 0~2 범위) 값이고  
-> `vec_b`(profile_i)는 weight(0~0.65 범위) 값이다. 단위가 달라도 코사인 유사도는  
-> **방향(비율 패턴)만 비교**하므로 스케일 차이는 영향 없다.
+`score_profile_signal`은 해당 프로필 requirement에 매칭된 confidence_total의 합이다.  
+동점이면 `target_priority_text`에서 직접 언급된 profile hint를 우선하고, 그래도 동점이면 registry 순서를 사용한다.
 
-### 2.5.3 블렌딩 가중치 산출
+### 2.5.3 선택 알고리즘
 
 ```python
-def compute_blend_weights(user_vector: dict, profile_pool: dict[str, dict]) -> dict[str, float]:
-    """
-    Returns: {profile_key: blend_ratio}, sum = 1.0
-    """
-    similarities = {
-        key: cosine_similarity(user_vector, pvec)
-        for key, pvec in profile_pool.items()
-    }
+DEFAULT_FALLBACK_PROFILE = "operations"  # V1에는 business profile이 없으므로 operations 사용
 
-    # 음수/0 유사도는 0으로 clamp, 거듭제곱으로 "가장 가까운 것"의 영향력을 키움
-    # (단순 정규화는 모든 프로필을 비슷하게 섞어 의미 없는 블렌드가 될 수 있음)
-    POWER = 2
-    weights = {k: max(0.0, s) ** POWER for k, s in similarities.items()}
-    total = sum(weights.values())
-
-    if total == 0:
-        # 모든 유사도가 0 (user_vector가 거의 zero vector)
-        # → §2.6 confidence_level=LOW로 처리되며, 이 경우 blend는 호출되지 않음
-        #   (04_PAYLOAD_CONTRACT.md 가드레일에서 사전 차단)
-        raise ValueError("user_vector가 모든 프로필과 유사도 0 — 가드레일에서 차단되어야 함")
-
-    return {k: round(w / total, 4) for k, w in weights.items()}
-```
-
-### 2.5.4 가중 선형결합 + 65/35 재정규화
-
-```python
-def blend_requirements(user_vector: dict, profile_pool: dict[str, list[Requirement]]) -> tuple[dict, list[Requirement]]:
-    """
-    Returns: (profile_blend, blended_requirements)
-    """
-    # 1. 각 프로필을 {requirement_key: weight} 벡터로 변환
-    profile_vectors = {
-        key: {r.requirement_key: r.weight for r in reqs}
-        for key, reqs in profile_pool.items()
-    }
-
-    # 2. 블렌딩 비율
-    profile_blend = compute_blend_weights(user_vector, profile_vectors)
-
-    # 3. 79차원 공간에서 가중 선형결합
-    blended_vector: dict[str, float] = {}
-    skill_group_lookup: dict[str, str] = {}
-    source_profiles: dict[str, set[str]] = {}
-
-    for profile_key, pvec in profile_vectors.items():
-        ratio = profile_blend[profile_key]
-        if ratio == 0:
-            continue
-        for req in profile_pool[profile_key]:
-            k = req.requirement_key
-            blended_vector[k] = blended_vector.get(k, 0) + ratio * req.weight
-            skill_group_lookup[k] = req.skill_group  # 충돌 시 마지막 값 (실무상 거의 일치)
-            source_profiles.setdefault(k, set()).add(profile_key)
-
-    # 4. UNIQUE/COMMON 그룹별 65/35 재정규화
-    blended_requirements = renormalize_to_65_35(blended_vector, skill_group_lookup, source_profiles)
-
-    return profile_blend, blended_requirements
-
-
-def renormalize_to_65_35(blended: dict[str, float], skill_groups: dict[str, str],
-                          source_profiles: dict[str, set[str]]) -> list[Requirement]:
-    unique_items = {k: v for k, v in blended.items() if skill_groups[k] == "UNIQUE"}
-    common_items = {k: v for k, v in blended.items() if skill_groups[k] == "COMMON"}
-
-    unique_sum = sum(unique_items.values())
-    common_sum = sum(common_items.values())
-
-    requirements = []
-    for k, v in unique_items.items():
-        requirements.append(Requirement(
-            requirement_key=k, skill_group="UNIQUE",
-            weight=round(0.65 * v / unique_sum, 4),
-            source_profiles=sorted(source_profiles[k]),
-            # label_ko, is_core, description은 skill_taxonomy.json + 첫 source_profile 기준 lookup
-        ))
-    for k, v in common_items.items():
-        requirements.append(Requirement(
-            requirement_key=k, skill_group="COMMON",
-            weight=round(0.35 * v / common_sum, 4),
-            source_profiles=sorted(source_profiles[k]),
-        ))
-
-    # 라운딩 오차 보정 — 최대 weight 항목에서 흡수
-    _fix_rounding(requirements, "UNIQUE", 0.65)
-    _fix_rounding(requirements, "COMMON", 0.35)
-
-    validate_blended_weights(requirements)
-    return requirements
-
-
-def _fix_rounding(requirements: list[Requirement], group: str, target: float) -> None:
-    items = [r for r in requirements if r.skill_group == group]
-    diff = round(target - sum(r.weight for r in items), 4)
-    if diff != 0 and items:
-        max_item = max(items, key=lambda r: r.weight)
-        max_item.weight = round(max_item.weight + diff, 4)
-
-
-def validate_blended_weights(requirements: list[Requirement]) -> None:
-    """06_SCORING_RULES.md §10 불변규칙 6, 7 — 블렌딩 후에도 적용"""
-    unique_sum = round(sum(r.weight for r in requirements if r.skill_group == "UNIQUE"), 4)
-    common_sum = round(sum(r.weight for r in requirements if r.skill_group == "COMMON"), 4)
-    assert abs(unique_sum - 0.65) < 0.001, f"blended UNIQUE sum = {unique_sum}"
-    assert abs(common_sum - 0.35) < 0.001, f"blended COMMON sum = {common_sum}"
-```
-
-### 2.5.5 예시 — "HR 81% + Operations 19%" 블렌딩
-
-```
-profile_blend = {"hr": 0.81, "operations": 0.19}
-
-HR 좌표축 (UNIQUE):
-  recruiting: 0.1625, training_and_onboarding: 0.1625,
-  labor_law: 0.1625, payroll: 0.1625
-
-Operations 좌표축 (UNIQUE):
-  process_improvement: 0.1625, vendor_management: 0.1625,
-  operations_management: 0.1625, logistics: 0.1625
-
-가중 선형결합 (UNIQUE 항목 일부):
-  recruiting             = 0.81 × 0.1625 = 0.1316
-  training_and_onboarding= 0.81 × 0.1625 = 0.1316
-  labor_law              = 0.81 × 0.1625 = 0.1316
-  payroll                = 0.81 × 0.1625 = 0.1316
-  process_improvement    = 0.19 × 0.1625 = 0.0309
-  vendor_management       = 0.19 × 0.1625 = 0.0309
-  operations_management   = 0.19 × 0.1625 = 0.0309
-  logistics                = 0.19 × 0.1625 = 0.0309
-
-unique_sum (블렌딩 직후) = 0.1316×4 + 0.0309×4 = 0.65 (정확히 맞아떨어짐 — 둘 다 4개 UNIQUE이고
-                                                         0.1625로 동일했기 때문)
-
-→ 이미 0.65이므로 재정규화 비율 = 1.0
-→ blended_requirements (UNIQUE 8개):
-   recruiting: 0.1316, training_and_onboarding: 0.1316,
-   labor_law: 0.1316, payroll: 0.1316,
-   process_improvement: 0.0309, vendor_management: 0.0309,
-   operations_management: 0.0309, logistics: 0.0309
-```
-
-> 이 예시는 "양쪽 다 UNIQUE 4개씩, weight가 동일(0.1625)"이라는 우연으로 합이 정확히  
-> 0.65가 되었다. 일반적으로는 재정규화(`_fix_rounding`)가 작동해 합을 0.65로 맞춘다.  
-> COMMON도 동일한 절차로 8~10개(중복 제거 시 5~9개)가 생성되며 합 0.35로 정규화된다.
-
----
-
-## 2.6 Confidence Level — 입력 가드레일 기준
-
-```python
-MIN_TOTAL_CONFIDENCE_FOR_ANALYSIS = 2.0   # 이 미만이면 04_PAYLOAD_CONTRACT.md 가드레일에서 경고
-HIGH_CONFIDENCE_THRESHOLD = 6.0
-MEDIUM_CONFIDENCE_THRESHOLD = 3.0
-
-def determine_confidence_level(user_vector: dict[str, float]) -> str:
-    total = sum(user_vector.values())
-    if total >= HIGH_CONFIDENCE_THRESHOLD:
-        return "HIGH"
-    elif total >= MEDIUM_CONFIDENCE_THRESHOLD:
-        return "MEDIUM"
-    elif total >= MIN_TOTAL_CONFIDENCE_FOR_ANALYSIS:
-        return "LOW"
+def select_primary_profile(user_vector, target_priority_text, profile_pool) -> tuple[str, list[str]]:
+    hinted = detect_profile_hint(target_priority_text, profile_pool)
+    if hinted:
+        primary = hinted
     else:
-        return "BLOCKED"  # 04_PAYLOAD_CONTRACT.md 가드레일: 사용자에게 보완 안내
+        scores = {key: score_profile_signal(user_vector, reqs) for key, reqs in profile_pool.items()}
+        primary = max(scores, key=lambda k: (scores[k], -profile_registry_order(k)))
+        if scores[primary] == 0:
+            primary = DEFAULT_FALLBACK_PROFILE
+
+    secondary = select_secondary_profiles(user_vector, profile_pool, exclude=primary)
+    return primary, secondary
 ```
 
-> 임계값(2.0 / 3.0 / 6.0)은 V1 초기값이다. `meta.confidence_level`의 분포가 누적되면  
-> (`03_ERD.md` §6 인덱스로 분석 가능) 실제 사용자 입력 분포에 맞춰 보정한다.
+선택 우선순위:
+1. `target_priority_text`에서 가장 명확한 직무/산업 표현
+2. `career_histories`에서 가장 많이 매칭된 skill의 profile
+3. 그래도 부족하면 `operations`를 `default_fallback_profile`로 사용
+
+`secondary_profiles`는 선택 필드이며, 사용자-facing 핵심 판단에는 사용하지 않는다.
+
+### 2.5.4 선택된 requirement
+
+```python
+def select_requirements(primary_profile: str, profile_pool: dict[str, list[Requirement]]) -> list[Requirement]:
+    requirements = profile_pool[primary_profile]
+    validate_profile_weights(primary_profile, requirements)
+    return requirements
+```
+
+`selected_requirements`의 UNIQUE 합계는 0.65, COMMON 합계는 0.35다.  
+점수, 갭, 추천은 이 requirement 집합만 기준으로 계산한다.
 
 ---
 
-## 2.7 단일/혼합 정체성 분기 (blend_display_mode)
+## 2.6 Confidence Level — evidence_count 기준
 
 ```python
-SINGLE_IDENTITY_THRESHOLD = 0.7
+HIGH_EVIDENCE_COUNT = 8
+MEDIUM_EVIDENCE_COUNT = 5
 
-def determine_blend_display_mode(profile_blend: dict[str, float]) -> str:
-    max_ratio = max(profile_blend.values())
-    return "SINGLE" if max_ratio >= SINGLE_IDENTITY_THRESHOLD else "MIXED"
+def determine_confidence_level(evidence_count: int) -> str:
+    if evidence_count >= HIGH_EVIDENCE_COUNT:
+        return "HIGH"
+    if evidence_count >= MEDIUM_EVIDENCE_COUNT:
+        return "MEDIUM"
+    return "LOW"
 ```
 
-`05_REPORT_SCHEMA.md` §2 `summary.blend_display_mode`, `09_TEXT_TEMPLATE_RULES.md` §2의  
-`blend_description` 템플릿 선택에 사용된다.
+LOW도 report_json 생성, scoring, PDF 생성 대상이다. LOW에서는 `warning_message`가 필수이며  
+"입력 정보가 부족하여 일부 결과는 추정에 기반합니다" 문구를 포함해야 한다.
 
 ---
 
@@ -384,35 +246,30 @@ MATCH_SCORE = {
 
 ---
 
-## 5. 점수 계산 예시 (v3 — 블렌딩된 requirements 기준)
+## 5. 점수 계산 예시 (v3.1 — primary_profile requirements 기준)
 
-`§2.5.5`의 블렌딩 결과(HR 81% + Operations 19%, UNIQUE 8개)에 사용자 Evidence를 적용한 예시:
+`primary_profile=hr`의 requirement에 사용자 Evidence를 적용한 예시:
 
-| requirement_key | skill_group | weight (블렌딩) | match_level | match_score | weighted_score |
+| requirement_key | skill_group | weight | match_level | match_score | weighted_score |
 |-----------------|-------------|------------------|-------------|-------------|-----------------|
-| recruiting | UNIQUE | 0.1316 | FULL | 1.00 | 13.16 |
-| training_and_onboarding | UNIQUE | 0.1316 | FULL | 1.00 | 13.16 |
-| payroll | UNIQUE | 0.1316 | FULL | 1.00 | 13.16 |
-| labor_law | UNIQUE | 0.1316 | NONE | 0.00 | 0.0 |
-| process_improvement | UNIQUE | 0.0309 | PARTIAL | 0.50 | 1.545 |
-| vendor_management | UNIQUE | 0.0309 | NONE | 0.00 | 0.0 |
-| operations_management | UNIQUE | 0.0309 | WEAK | 0.25 | 0.7725 |
-| logistics | UNIQUE | 0.0309 | NONE | 0.00 | 0.0 |
-| (COMMON 5~9개, 별도 계산) | COMMON | Σ=0.35 | ... | ... | ... |
+| recruiting | UNIQUE | 0.1625 | FULL | 1.00 | 16.25 |
+| training_and_onboarding | UNIQUE | 0.1625 | FULL | 1.00 | 16.25 |
+| payroll | UNIQUE | 0.1625 | FULL | 1.00 | 16.25 |
+| labor_law | UNIQUE | 0.1625 | NONE | 0.00 | 0.0 |
+| (COMMON 5개, 별도 계산) | COMMON | Σ=0.35 | ... | ... | ... |
 
 ```
-unique_total (raw) = 13.16×3 + 0 + 1.545 + 0 + 0.7725 + 0 = 41.8575
-core_penalty: labor_law는 is_core=true(HR 좌표축에서 유래)이고 match_level=NONE → -5.0
-              (06_SCORING_RULES.md §6 — is_core는 source_profiles 중 하나라도 true면 적용)
+unique_total (raw) = 16.25×3 + 0 = 48.75
+core_penalty: labor_law는 is_core=true이고 match_level=NONE → -5.0
 
-unique_total (final) = 41.8575 - 5.0 = 36.8575 ≈ 36.86
+unique_total (final) = 48.75 - 5.0 = 43.75 ≈ 43.8
 ```
 
-> COMMON 부분은 §2.5.5에서 생략되었으나 동일한 절차로 계산되며, `total = unique_total + common_total`이다.
+> COMMON 부분도 동일하게 primary_profile의 COMMON requirement 기준으로 계산되며, `total = unique_total + common_total`이다.
 
 ---
 
-## 6. Core Penalty 규칙 (v3: source_profiles 고려)
+## 6. Core Penalty 규칙
 
 ```python
 CORE_PENALTY_NONE = -5.0
@@ -420,10 +277,8 @@ CORE_PENALTY_WEAK = -2.5
 
 def apply_core_penalty(matches: list[RequirementMatch], requirements: list[Requirement]) -> float:
     """
-    v3: requirements는 blended_requirements (renormalize_to_65_35 결과).
-    is_core는 §2.5.4에서 원본 좌표축의 is_core_overrides를 따라가며,
-    여러 source_profiles 중 하나라도 is_core=true였다면 블렌딩 결과에서도 is_core=true로 유지한다.
-    (06_SCORING_RULES.md §2.5.4 renormalize_to_65_35 — is_core 전파 규칙)
+    requirements는 primary_profile의 selected_requirements.
+    is_core는 해당 profile registry의 값을 그대로 사용한다.
     """
     penalty = 0.0
     for req in requirements:
@@ -460,7 +315,7 @@ def calculate_final_scores(unique_raw: float, common_total: float, penalty: floa
 
 ---
 
-## 8. Gap Severity 분류 (변경 없음, blended_requirements 기준으로 적용)
+## 8. Gap Severity 분류 (변경 없음, selected_requirements 기준으로 적용)
 
 ```python
 def classify_gap_severity(req: Requirement, match: RequirementMatch) -> GapSeverity:
@@ -486,7 +341,7 @@ def assign_priority_order(gaps: list[Gap]) -> list[Gap]:
 
 ---
 
-## 9. Strength 선정 규칙 (변경 없음, blended_requirements 기준)
+## 9. Strength 선정 규칙 (변경 없음, selected_requirements 기준)
 
 ```python
 def select_strengths(matches: list[RequirementMatch], requirements: list[Requirement]) -> list[Strength]:
@@ -515,14 +370,13 @@ def select_strengths(matches: list[RequirementMatch], requirements: list[Require
 3. 0 <= unique_total <= 65
 4. 0 <= common_total <= 35
 5. core_penalty <= 0
-6. Σ weight (skill_group=UNIQUE, blended_requirements) == 0.65  (±0.001)   [v3: 블렌딩 후에도 적용]
-7. Σ weight (skill_group=COMMON, blended_requirements) == 0.35  (±0.001)   [v3: 블렌딩 후에도 적용]
-8. 동일 입력 → 동일 출력 (결정론적, 3회 실행 비교) — 블렌딩 포함
+6. Σ weight (skill_group=UNIQUE, selected_requirements) == 0.65  (±0.001)
+7. Σ weight (skill_group=COMMON, selected_requirements) == 0.35  (±0.001)
+8. 동일 입력 → 동일 출력 (결정론적, 3회 실행 비교)
 9. confidence_score < 0.5인 Evidence는 매칭 계산에 포함하지 않음
 10. original_text는 절대 수정되지 않음
-11. (v3 신규) Σ profile_blend.values() == 1.0  (±0.001)
-12. (v3 신규) confidence_level == "BLOCKED"인 입력은 blend_requirements()가 호출되지 않음
-              (04_PAYLOAD_CONTRACT.md 가드레일에서 사전 차단)
+11. primary_profile은 항상 유효한 profile_pool key
+12. confidence_level은 HIGH | MEDIUM | LOW만 허용, LOW도 report_json 생성 대상
 ```
 
 ---
@@ -531,8 +385,6 @@ def select_strengths(matches: list[RequirementMatch], requirements: list[Require
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| `compute_blend_weights`의 `POWER=2`는 임의로 선택된 값 | 블렌딩 비율의 "쏠림 정도"가 이 값에 민감 (POWER가 클수록 1등 프로필에 더 쏠림) | V1은 POWER=2로 시작, `profile_blend` 분포 데이터를 보고 조정 — `01_PRD.md` §4.3 |
-| `renormalize_to_65_35`에서 `skill_groups[k]`가 프로필 간 충돌 시 "마지막 값" 사용 | 동일 requirement_key가 한 프로필에서 UNIQUE, 다른 프로필에서 COMMON으로 정의되어 있으면 비결정적일 수 있음 | V1의 N=10 데이터(Day 6 산출물)에서는 충돌 사례 없음(확인 필요). N 확장 시 충돌 검증 스크립트 필요 |
-| `is_core` 전파 규칙(§6 — "하나라도 true면 true") | 블렌딩 비율이 낮은(예: 5%) 프로필에서 유래한 is_core가 전체 결과의 core_penalty를 좌우할 수 있음 | 의도된 보수적 설계(누락 방지)지만, MIXED 모드에서 penalty가 사용자 기대보다 크게 느껴질 가능성 |
-| §2.5.3 `total == 0` 예외가 발생하면 `ValueError` | 가드레일(§2.6 BLOCKED)이 정상 동작한다는 전제 하에 "발생하지 않아야 하는" 코드 경로 | 방어적 코드이지만, 가드레일 우회 경로(예: API 직접 호출)에서는 500 에러로 노출될 수 있음 — `04_PAYLOAD_CONTRACT.md` `ENGINE_ERROR` 처리 확인 필요 |
-| 라운딩 보정(`_fix_rounding`)이 항상 "최대 weight 항목"에 흡수 | 동일한 두 항목이 최댓값으로 동률일 때 처리 순서가 dict 순서에 의존 | Python 3.7+ dict는 입력 순서 보존이므로 결정론은 유지되나, "왜 이 항목이 보정됐는지"는 직관적이지 않을 수 있음 |
+| fallback으로 `operations`가 선택되는 LOW 입력 | 사용자 의도와 다를 수 있음 | `warning_message`와 추가 입력 권장 문구를 필수 표시 |
+| target_priority_text의 직무 표현이 모호함 | primary_profile 선택이 career evidence에 더 의존 | 선택 이유를 `primary_profile_summary`에 짧게 설명 |
+| secondary_profiles가 사용자에게 과해 보일 수 있음 | 핵심 판단 혼란 | V1에서는 선택적 보조 정보로만 렌더링 |

@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "report_id": "gold_hr_dominant",
+    "generated_at": "2025-01-01T00:00:00Z",
+    "engine_version": "3.1.0",
+    "llm_used": false,
+    "primary_profile": "hr",
+    "secondary_profiles": ["operations"],
+    "weight_source": "MANUAL_V1",
+    "confidence_level": "HIGH",
+    "evidence_count": 8,
+    "warning_message": null
+  },
+  "summary": {
+    "total_score": 76.0,
+    "score_label": "우수",
+    "fit_level": "GOOD_FIT",
+    "one_line": "인사(HR) 기준에서 높은 적합도(76점)를 보입니다. 노동법 영역의 보강을 통해 경쟁력을 더욱 높일 수 있습니다.",
+    "primary_profile_summary": "입력된 채용, 온보딩, 급여 운영 근거를 기준으로 인사(HR)를 대표 프로필로 선택했습니다.",
+    "unique_score": 50.0,
+    "unique_score_max": 65.0,
+    "common_score": 26.0,
+    "common_score_max": 35.0,
+    "key_strengths": ["recruiting", "training_and_onboarding", "payroll"],
+    "key_gaps": ["labor_law", "performance_management"]
+  },
+  "careerProfile": {
+    "total_experience_months": 48,
+    "total_experience_label": "4년",
+    "career_count": 2,
+    "most_recent_title": "HR 매니저",
+    "most_recent_company": "그로스테크 A사",
+    "extracted_skills": [
+      {"skill_key": "recruiting", "label_ko": "채용 관리", "skill_group": "UNIQUE", "evidence_count": 2, "confidence_total": 1.9, "confidence_label": "HIGH"},
+      {"skill_key": "training_and_onboarding", "label_ko": "교육/온보딩", "skill_group": "UNIQUE", "evidence_count": 2, "confidence_total": 1.9, "confidence_label": "HIGH"},
+      {"skill_key": "payroll", "label_ko": "급여 관리", "skill_group": "UNIQUE", "evidence_count": 2, "confidence_total": 1.9, "confidence_label": "HIGH"},
+      {"skill_key": "documentation", "label_ko": "문서화", "skill_group": "COMMON", "evidence_count": 1, "confidence_total": 1.0, "confidence_label": "HIGH"}
+    ]
+  },
+  "targetJobAnalysis": {
+    "primary_profile": "hr",
+    "primary_profile_label_ko": "인사(HR)",
+    "secondary_profiles": ["operations"],
+    "unique_requirements": [
+      {"requirement_key": "recruiting", "label_ko": "채용 관리", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["hr"]},
+      {"requirement_key": "training_and_onboarding", "label_ko": "교육/온보딩", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["hr"]},
+      {"requirement_key": "labor_law", "label_ko": "노동법", "weight": 0.1625, "is_core": true, "match_level": "WEAK", "source_profiles": ["hr"]},
+      {"requirement_key": "payroll", "label_ko": "급여 관리", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["hr"]}
+    ],
+    "common_requirements": [
+      {"requirement_key": "communication", "label_ko": "커뮤니케이션", "weight": 0.07, "is_core": false, "match_level": "STRONG", "source_profiles": ["hr"]},
+      {"requirement_key": "stakeholder_management", "label_ko": "이해관계자 관리", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["hr"]},
+      {"requirement_key": "documentation", "label_ko": "문서화", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["hr"]},
+      {"requirement_key": "performance_management", "label_ko": "성과 관리", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["hr"]},
+      {"requirement_key": "employee_relations", "label_ko": "직원 관계 관리", "weight": 0.07, "is_core": false, "match_level": "STRONG", "source_profiles": ["hr"]}
+    ],
+    "requirement_overview": "채용, 온보딩, 급여 운영 evidence가 HR 고유 역량에 집중되어 인사(HR)를 대표 프로필로 선택했습니다."
+  },
+  "skillMapping": {
+    "matched": [
+      {"skill_key": "recruiting", "label_ko": "채용 관리", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25},
+      {"skill_key": "training_and_onboarding", "label_ko": "교육/온보딩", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25},
+      {"skill_key": "payroll", "label_ko": "급여 관리", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}
+    ],
+    "unmatched": [
+      {"skill_key": "labor_law", "label_ko": "노동법", "skill_group": "UNIQUE", "match_level": "WEAK", "weight": 0.1625, "weighted_score": 4.06}
+    ]
+  },
+  "evidenceMapping": [
+    {"evidence_id": "ev_001", "source": "career_histories[0].description", "text": "개발자 채용 공고 작성부터 서류 전형, 면접 일정 조율, 오퍼 협상까지 전 과정을 운영했습니다.", "skill_key": "hr.recruiting", "status": "ACHIEVED", "weight": 0.65},
+    {"evidence_id": "ev_002", "source": "career_histories[0].description", "text": "신규 입사자를 위해 30/60/90일 온보딩 로드맵과 멘토링 체크리스트를 만들었습니다.", "skill_key": "hr.training_and_onboarding", "status": "ACHIEVED", "weight": 0.65},
+    {"evidence_id": "ev_003", "source": "career_histories[1].description", "text": "근로계약 갱신, 급여 정산 검토, 4대보험 신고 일정을 관리했습니다.", "skill_key": "hr.payroll", "status": "ACHIEVED", "weight": 0.65},
+    {"evidence_id": "ev_004", "source": "career_histories[1].description", "text": "근로기준법 변경 사항을 확인해 인사규정 개정안을 문서화했습니다.", "skill_key": "hr.labor_law", "status": "POTENTIAL", "weight": 0.65},
+    {"evidence_id": "ev_005", "source": "career_histories[0].description", "text": "조직문화 서베이를 설계해 고충 처리 이슈를 분류했습니다.", "skill_key": "hr.employee_relations", "status": "ACHIEVED", "weight": 0.35},
+    {"evidence_id": "ev_006", "source": "career_histories[1].description", "text": "인사규정 개정안을 문서화하고 부서장에게 설명했습니다.", "skill_key": "hr.documentation", "status": "ACHIEVED", "weight": 0.35},
+    {"evidence_id": "ev_007", "source": "career_histories[1].description", "text": "평가 일정 지연 없이 전사 성과 평가를 마감했습니다.", "skill_key": "hr.performance_management", "status": "POTENTIAL", "weight": 0.35},
+    {"evidence_id": "ev_008", "source": "target_priority_text", "text": "HRBP로서 채용, 온보딩, 조직문화 개선을 함께 맡는 역할을 목표로 합니다.", "skill_key": "hr.recruiting", "status": "POTENTIAL", "weight": 0.65}
+  ],
+  "scores": {
+    "total": 76.0,
+    "unique_total": 50.0,
+    "common_total": 26.0,
+    "core_penalty": -2.5,
+    "breakdown": {
+      "recruiting": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 2, "confidence_total": 1.9},
+      "training_and_onboarding": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 1, "confidence_total": 1.0},
+      "labor_law": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "WEAK", "match_score": 0.25, "weighted_score": 4.06, "evidence_count": 1, "confidence_total": 0.6},
+      "payroll": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 1, "confidence_total": 1.0},
+      "documentation": {"weight": 0.07, "skill_group": "COMMON", "match_level": "FULL", "match_score": 1.0, "weighted_score": 7.0, "evidence_count": 1, "confidence_total": 1.0}
+    }
+  },
+  "strengths": [
+    {"skill_key": "recruiting", "headline": "채용 관리: 인사(HR) 핵심 역량을 직접 수행한 검증된 경험", "detail": "채용 공고 작성부터 면접 일정 조율과 오퍼 협상까지 전 과정을 운영했습니다. 반기 채용 목표 125% 달성으로 성과도 확인됩니다.", "rank": 1},
+    {"skill_key": "training_and_onboarding", "headline": "교육/온보딩: 인사(HR) 핵심 역량을 직접 수행한 검증된 경험", "detail": "신규 입사자 온보딩 로드맵과 멘토링 체크리스트를 직접 설계했습니다. 온보딩 만족도 4점대 후반으로 실행 효과가 확인됩니다.", "rank": 2},
+    {"skill_key": "payroll", "headline": "급여 관리: 인사(HR) 핵심 역량에서 실무 경험 확인", "detail": "급여 정산 검토와 4대보험 신고 일정을 관리했습니다. 급여 정산 오류율을 낮춘 성과가 있습니다.", "rank": 3}
+  ],
+  "gaps": [
+    {"skill_key": "labor_law", "headline": "노동법 역량 보강이 필요합니다", "detail": "근로기준법 변경 사항을 확인한 경험은 있으나 직접 노무 이슈를 해결한 근거는 제한적입니다. HRBP 역할에서는 실제 사례 기반 보강이 필요합니다.", "gap_severity": "MAJOR", "priority_order": 1},
+    {"skill_key": "performance_management", "headline": "성과 관리 역량을 보완하면 좋습니다", "detail": "성과 평가 마감 경험은 있으나 평가 제도 설계 evidence는 부족합니다. KPI와 평가 프로세스 설계 경험을 추가하면 좋습니다.", "gap_severity": "MINOR", "priority_order": 2}
+  ],
+  "recommendations": {
+    "items": [
+      {"title": "노동법 사례 학습", "detail": "근로계약, 징계, 연차 이슈를 중심으로 케이스 노트를 작성하세요. HRBP 면접에서 설명 가능한 사례 3개를 준비하는 것이 좋습니다."},
+      {"title": "평가 제도 설계 포트폴리오", "detail": "기존 평가 운영 경험을 KPI 설계안으로 확장하세요. 작은 조직 기준의 평가 프로세스 초안을 만들면 갭이 줄어듭니다."},
+      {"title": "People Operations 성과 정리", "detail": "채용, 온보딩, 급여 오류 개선 성과를 한 페이지로 정리하세요. 수치 중심으로 정리하면 HR 대표 프로필의 설득력이 높아집니다."}
+    ]
+  },
+  "roadmap": {
+    "30_days": {"theme": "HR evidence 정리", "actions": ["채용과 온보딩 성과를 지표 중심으로 정리", "근로계약 및 급여 운영 사례를 문서화"]},
+    "60_days": {"theme": "노동법 갭 보완", "actions": ["근로기준법 실무 사례 3개 학습", "성과 평가 프로세스 개선안을 작성"]},
+    "90_days": {"theme": "HRBP 지원 준비", "actions": ["People Operations 포트폴리오 완성", "HRBP JD와 현재 evidence를 매핑"]}
+  },
+  "reportSections": [
+    {"section_id": "cover", "order": 1, "enabled": true},
+    {"section_id": "executive_summary", "order": 2, "enabled": true},
+    {"section_id": "career_profile", "order": 3, "enabled": true},
+    {"section_id": "target_job", "order": 4, "enabled": true},
+    {"section_id": "skill_mapping", "order": 5, "enabled": true},
+    {"section_id": "evidence_mapping", "order": 6, "enabled": true},
+    {"section_id": "fit_score", "order": 7, "enabled": true},
+    {"section_id": "strength_analysis", "order": 8, "enabled": true},
+    {"section_id": "gap_analysis", "order": 9, "enabled": true},
+    {"section_id": "recommendation", "order": 10, "enabled": true},
+    {"section_id": "roadmap", "order": 11, "enabled": true},
+    {"section_id": "final_assessment", "order": 12, "enabled": true}
+  ]
+}

@@ -5,14 +5,279 @@
   "targetJobAnalysis": {"primary_profile": "hr", "primary_profile_label_ko": "인사(HR)", "secondary_profiles": ["operations"], "unique_requirements": [{"requirement_key": "recruiting", "label_ko": "채용 관리", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["hr"]}, {"requirement_key": "training_and_onboarding", "label_ko": "교육/온보딩", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["hr"]}, {"requirement_key": "labor_law", "label_ko": "노동법", "weight": 0.1625, "is_core": true, "match_level": "NONE", "source_profiles": ["hr"]}, {"requirement_key": "payroll", "label_ko": "급여 관리", "weight": 0.1625, "is_core": true, "match_level": "PARTIAL", "source_profiles": ["hr"]}], "common_requirements": [{"requirement_key": "communication", "label_ko": "커뮤니케이션", "weight": 0.07, "is_core": false, "match_level": "STRONG", "source_profiles": ["hr"]}, {"requirement_key": "stakeholder_management", "label_ko": "이해관계자 관리", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["hr"]}, {"requirement_key": "documentation", "label_ko": "문서화", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["hr"]}, {"requirement_key": "performance_management", "label_ko": "성과 관리", "weight": 0.07, "is_core": false, "match_level": "WEAK", "source_profiles": ["hr"]}, {"requirement_key": "employee_relations", "label_ko": "직원 관계 관리", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["hr"]}], "requirement_overview": "채용과 온보딩은 HR 기준으로 강하지만 프로세스 개선과 벤더 조율은 보조 운영 신호로 해석됩니다."},
   "skillMapping": {"matched": [{"skill_key": "recruiting", "label_ko": "채용 관리", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}, {"skill_key": "training_and_onboarding", "label_ko": "교육/온보딩", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}, {"skill_key": "documentation", "label_ko": "문서화", "skill_group": "COMMON", "match_level": "FULL", "weight": 0.07, "weighted_score": 7.0}], "unmatched": [{"skill_key": "labor_law", "label_ko": "노동법", "skill_group": "UNIQUE", "match_level": "NONE", "weight": 0.1625, "weighted_score": 0.0}]},
   "evidenceMapping": [
-    {"evidence_id": "ev_001", "source": "career_histories[0].description", "text": "월별 채용 계획을 현업 리더와 조율하고 공고 작성, 면접 일정 조율을 운영했습니다.", "skill_key": "hr.recruiting", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_002", "source": "career_histories[0].description", "text": "신규 입사자 온보딩 자료와 근로계약 체크리스트를 표준화했습니다.", "skill_key": "hr.training_and_onboarding", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_003", "source": "career_histories[0].description", "text": "비용 정산 일정을 관리했습니다.", "skill_key": "hr.payroll", "status": "POTENTIAL", "weight": 0.65},
-    {"evidence_id": "ev_004", "source": "career_histories[0].description", "text": "근로계약 체크리스트를 표준화했습니다.", "skill_key": "hr.labor_law", "status": "MISSING", "weight": 0.65},
-    {"evidence_id": "ev_005", "source": "career_histories[1].description", "text": "운영 관리 현황을 정리해 주간 보고했습니다.", "skill_key": "hr.documentation", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_006", "source": "career_histories[1].description", "text": "창고 입출고 프로세스 개선 회의에 참여했습니다.", "skill_key": "operations.process_improvement", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_007", "source": "career_histories[0].description", "text": "외부 교육 벤더와 협력사 소통을 맡았습니다.", "skill_key": "operations.vendor_management", "status": "POTENTIAL", "weight": 0.65},
-    {"evidence_id": "ev_008", "source": "target_priority_text", "text": "채용과 온보딩을 중심으로 하되, 인사 운영 프로세스 개선까지 책임지는 역할을 선호합니다.", "skill_key": "hr.recruiting", "status": "POTENTIAL", "weight": 0.65}
+    {
+      "evidence_id": "ev_001",
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "월별 채용 계획을 현업 리더와 조율하고 공고 작성, 면접 일정 조율, 후보자 커뮤니케이션을 운영했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "커뮤니케이션"
+      ]
+    },
+    {
+      "evidence_id": "ev_002",
+      "skill_key": "coordination",
+      "label_ko": "일정/업무 조율",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "월별 채용 계획을 현업 리더와 조율하고 공고 작성, 면접 일정 조율, 후보자 커뮤니케이션을 운영했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "일정 조율",
+        "조율"
+      ]
+    },
+    {
+      "evidence_id": "ev_003",
+      "skill_key": "recruiting",
+      "label_ko": "채용 관리",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "월별 채용 계획을 현업 리더와 조율하고 공고 작성, 면접 일정 조율, 후보자 커뮤니케이션을 운영했습니다.",
+      "confidence_score": 1.0,
+      "matched_keywords": [
+        "공고 작성",
+        "면접",
+        "채용",
+        "후보자"
+      ]
+    },
+    {
+      "evidence_id": "ev_004",
+      "skill_key": "stakeholder_management",
+      "label_ko": "이해관계자 관리",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "월별 채용 계획을 현업 리더와 조율하고 공고 작성, 면접 일정 조율, 후보자 커뮤니케이션을 운영했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "리더",
+        "현업"
+      ]
+    },
+    {
+      "evidence_id": "ev_005",
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "창고 입출고 프로세스 개선 회의에 참여해 체크리스트와 검수 기준을 문서화했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "문서",
+        "문서화"
+      ]
+    },
+    {
+      "evidence_id": "ev_006",
+      "skill_key": "labor_law",
+      "label_ko": "노동법",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "신규 입사자 온보딩 자료와 근로계약 체크리스트를 표준화해 입사 전후 업무 흐름을 정리했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "근로계약"
+      ]
+    },
+    {
+      "evidence_id": "ev_007",
+      "skill_key": "process_design",
+      "label_ko": "프로세스 설계",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "신규 입사자 온보딩 자료와 근로계약 체크리스트를 표준화해 입사 전후 업무 흐름을 정리했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "업무 흐름"
+      ]
+    },
+    {
+      "evidence_id": "ev_008",
+      "skill_key": "process_improvement",
+      "label_ko": "프로세스 개선",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "입사 준비 누락 건수를 분기 9건에서 1건으로 줄이고 온보딩 만족도 4점대 중반을 기록했으며, 인사 운영 매뉴얼로 반복 문의 처리 시간을 30% 단축했습니다.",
+      "confidence_score": 0.9,
+      "matched_keywords": [
+        "프로세스.*(?:단축|개선)|처리 시간.*단축"
+      ]
+    },
+    {
+      "evidence_id": "ev_009",
+      "skill_key": "training_and_onboarding",
+      "label_ko": "교육/온보딩",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "입사 준비 누락 건수를 분기 9건에서 1건으로 줄이고 온보딩 만족도 4점대 중반을 기록했으며, 인사 운영 매뉴얼로 반복 문의 처리 시간을 30% 단축했습니다.",
+      "confidence_score": 0.85,
+      "matched_keywords": [
+        "온보딩"
+      ]
+    },
+    {
+      "evidence_id": "ev_010",
+      "skill_key": "payroll",
+      "label_ko": "급여 관리",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "외부 교육 벤더와 협력사 소통을 맡고 비용 정산 일정을 관리했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "비용 정산"
+      ]
+    },
+    {
+      "evidence_id": "ev_011",
+      "skill_key": "vendor_coordination",
+      "label_ko": "외부 업체 소통",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "외부 교육 벤더와 협력사 소통을 맡고 비용 정산 일정을 관리했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "협력사 소통"
+      ]
+    },
+    {
+      "evidence_id": "ev_012",
+      "skill_key": "vendor_management",
+      "label_ko": "벤더 관리",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "외부 교육 벤더와 협력사 소통을 맡고 비용 정산 일정을 관리했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "벤더"
+      ]
+    },
+    {
+      "evidence_id": "ev_013",
+      "skill_key": "operations_management",
+      "label_ko": "운영 관리",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "현장 근무자 스케줄 관리와 운영 관리 현황을 정리해 주간 보고했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "운영 관리"
+      ]
+    },
+    {
+      "evidence_id": "ev_014",
+      "skill_key": "reporting",
+      "label_ko": "보고/리포팅",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "현장 근무자 스케줄 관리와 운영 관리 현황을 정리해 주간 보고했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "보고",
+        "주간 보고"
+      ]
+    },
+    {
+      "evidence_id": "ev_015",
+      "skill_key": "logistics",
+      "label_ko": "물류/공급망",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "창고 입출고 프로세스 개선 회의에 참여해 체크리스트와 검수 기준을 문서화했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "입출고"
+      ]
+    },
+    {
+      "evidence_id": "ev_016",
+      "skill_key": "quality_control",
+      "label_ko": "품질 관리 기초",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "창고 입출고 프로세스 개선 회의에 참여해 체크리스트와 검수 기준을 문서화했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "검수"
+      ]
+    },
+    {
+      "evidence_id": "ev_017",
+      "skill_key": "process_improvement",
+      "label_ko": "프로세스 개선",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "채용과 온보딩을 중심으로 하되, 인사 운영 프로세스 개선까지 책임지는 역할을 선호합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "프로세스 개선"
+      ]
+    },
+    {
+      "evidence_id": "ev_018",
+      "skill_key": "recruiting",
+      "label_ko": "채용 관리",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "채용과 온보딩을 중심으로 하되, 인사 운영 프로세스 개선까지 책임지는 역할을 선호합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "채용"
+      ]
+    },
+    {
+      "evidence_id": "ev_019",
+      "skill_key": "training_and_onboarding",
+      "label_ko": "교육/온보딩",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "채용과 온보딩을 중심으로 하되, 인사 운영 프로세스 개선까지 책임지는 역할을 선호합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "온보딩"
+      ]
+    },
+    {
+      "evidence_id": "ev_020",
+      "skill_key": "coordination",
+      "label_ko": "일정/업무 조율",
+      "evidence_type": "EXPLICIT",
+      "source": "target_priority_text",
+      "original_text": "사람과 제도가 함께 굴러가도록 일정 조율, 문서화, 운영 관리 역량을 더 키우고 싶습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "일정 조율",
+        "조율"
+      ]
+    },
+    {
+      "evidence_id": "ev_021",
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "evidence_type": "EXPLICIT",
+      "source": "target_priority_text",
+      "original_text": "사람과 제도가 함께 굴러가도록 일정 조율, 문서화, 운영 관리 역량을 더 키우고 싶습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "문서",
+        "문서화"
+      ]
+    },
+    {
+      "evidence_id": "ev_022",
+      "skill_key": "operations_management",
+      "label_ko": "운영 관리",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "사람과 제도가 함께 굴러가도록 일정 조율, 문서화, 운영 관리 역량을 더 키우고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "운영 관리"
+      ]
+    }
   ],
   "scores": {"total": 68.0, "unique_total": 44.0, "common_total": 24.0, "core_penalty": -5.0, "breakdown": {"recruiting": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 2, "confidence_total": 1.8}, "training_and_onboarding": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 1, "confidence_total": 1.0}, "labor_law": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "NONE", "match_score": 0.0, "weighted_score": 0.0, "evidence_count": 0, "confidence_total": 0.0}, "payroll": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "PARTIAL", "match_score": 0.5, "weighted_score": 8.13, "evidence_count": 1, "confidence_total": 0.7}}},
   "strengths": [{"skill_key": "recruiting", "headline": "채용 관리: 인사(HR) 핵심 역량을 직접 수행한 검증된 경험", "detail": "채용 계획 조율, 공고 작성, 면접 일정 운영 경험이 확인됩니다. People Operations 맥락에서도 반복 수행한 근거가 있습니다.", "rank": 1}, {"skill_key": "training_and_onboarding", "headline": "교육/온보딩: 인사(HR) 핵심 역량에서 실무 경험 확인", "detail": "온보딩 자료와 근로계약 체크리스트를 표준화했습니다. 입사 준비 누락 감소 성과도 확인됩니다.", "rank": 2}, {"skill_key": "documentation", "headline": "문서화: 직무 전반에 적용 가능한 범용 역량을 입증한 경험", "detail": "운영 매뉴얼과 주간 보고 자료를 작성했습니다. HR과 운영 양쪽에서 재사용 가능한 강점입니다.", "rank": 3}],

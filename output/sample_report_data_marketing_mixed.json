@@ -5,14 +5,216 @@
   "targetJobAnalysis": {"primary_profile": "marketing", "primary_profile_label_ko": "마케팅", "secondary_profiles": ["data"], "unique_requirements": [{"requirement_key": "campaign_management", "label_ko": "캠페인 관리", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["marketing"]}, {"requirement_key": "seo_sem", "label_ko": "SEO/SEM", "weight": 0.1625, "is_core": true, "match_level": "PARTIAL", "source_profiles": ["marketing"]}, {"requirement_key": "content_marketing", "label_ko": "콘텐츠 마케팅", "weight": 0.1625, "is_core": true, "match_level": "WEAK", "source_profiles": ["marketing"]}, {"requirement_key": "brand_management", "label_ko": "브랜드 관리", "weight": 0.1625, "is_core": true, "match_level": "NONE", "source_profiles": ["marketing"]}], "common_requirements": [{"requirement_key": "communication", "label_ko": "커뮤니케이션", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["marketing"]}, {"requirement_key": "data_analysis", "label_ko": "데이터 분석", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["marketing"]}, {"requirement_key": "presentation", "label_ko": "발표/프레젠테이션", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["marketing"]}, {"requirement_key": "social_media", "label_ko": "소셜 미디어", "weight": 0.07, "is_core": false, "match_level": "STRONG", "source_profiles": ["marketing"]}, {"requirement_key": "marketing_analytics", "label_ko": "마케팅 분석", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["marketing"]}], "requirement_overview": "마케팅 캠페인 성과를 SQL과 대시보드로 추적한 경험이 강해 marketing primary, data secondary로 분석합니다."},
   "skillMapping": {"matched": [{"skill_key": "campaign_management", "label_ko": "캠페인 관리", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}, {"skill_key": "marketing_analytics", "label_ko": "마케팅 분석", "skill_group": "COMMON", "match_level": "FULL", "weight": 0.07, "weighted_score": 7.0}, {"skill_key": "data_analysis", "label_ko": "데이터 분석", "skill_group": "COMMON", "match_level": "FULL", "weight": 0.07, "weighted_score": 7.0}], "unmatched": [{"skill_key": "brand_management", "label_ko": "브랜드 관리", "skill_group": "UNIQUE", "match_level": "NONE", "weight": 0.1625, "weighted_score": 0.0}]},
   "evidenceMapping": [
-    {"evidence_id": "ev_001", "source": "career_histories[0].description", "text": "마케팅 캠페인별 유입, 가입, 결제 전환율을 SQL로 집계했습니다.", "skill_key": "marketing.campaign_management", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_002", "source": "career_histories[0].description", "text": "BI 대시보드에 캠페인 성과를 반영했습니다.", "skill_key": "data.data_visualization", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_003", "source": "career_histories[0].description", "text": "GA와 광고 관리자 데이터를 비교해 ROAS가 낮은 소재를 찾았습니다.", "skill_key": "marketing.marketing_analytics", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_004", "source": "career_histories[0].description", "text": "A/B 테스트 결과를 검색광고 예산 배분 근거로 사용했습니다.", "skill_key": "data.ab_testing", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_005", "source": "career_histories[1].description", "text": "SNS 운영과 뉴스레터 콘텐츠 제작을 맡았습니다.", "skill_key": "marketing.social_media", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_006", "source": "career_histories[1].description", "text": "사용자 세그먼트별 리텐션을 분석해 다음 캠페인 타깃을 조정했습니다.", "skill_key": "marketing.data_analysis", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_007", "source": "career_histories[0].description", "text": "랜딩페이지 카피 수정 근거로 사용했습니다.", "skill_key": "marketing.content_marketing", "status": "POTENTIAL", "weight": 0.65},
-    {"evidence_id": "ev_008", "source": "target_priority_text", "text": "퍼포먼스 마케팅과 데이터 분석이 연결된 역할을 목표로 합니다.", "skill_key": "marketing.marketing_analytics", "status": "POTENTIAL", "weight": 0.35}
+    {
+      "evidence_id": "ev_001",
+      "skill_key": "campaign_management",
+      "label_ko": "캠페인 관리",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "마케팅 캠페인별 유입, 가입, 결제 전환율을 SQL로 집계하고 BI 대시보드에 반영했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "마케팅 캠페인",
+        "캠페인"
+      ]
+    },
+    {
+      "evidence_id": "ev_002",
+      "skill_key": "data_visualization",
+      "label_ko": "데이터 시각화",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "마케팅 캠페인별 유입, 가입, 결제 전환율을 SQL로 집계하고 BI 대시보드에 반영했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "bi",
+        "대시보드"
+      ]
+    },
+    {
+      "evidence_id": "ev_003",
+      "skill_key": "content_marketing",
+      "label_ko": "콘텐츠 마케팅",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "SNS 운영과 뉴스레터 콘텐츠 제작을 맡으며 채널별 가입자 반응을 데이터로 비교했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "뉴스레터",
+        "콘텐츠 제작"
+      ]
+    },
+    {
+      "evidence_id": "ev_004",
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "SNS 운영과 뉴스레터 콘텐츠 제작을 맡으며 채널별 가입자 반응을 데이터로 비교했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "데이터"
+      ]
+    },
+    {
+      "evidence_id": "ev_005",
+      "skill_key": "ab_testing",
+      "label_ko": "A/B 테스트",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "A/B 테스트 결과를 정리해 검색광고 예산 배분과 랜딩페이지 카피 수정 근거로 사용했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "a/b 테스트"
+      ]
+    },
+    {
+      "evidence_id": "ev_006",
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "A/B 테스트 결과를 정리해 검색광고 예산 배분과 랜딩페이지 카피 수정 근거로 사용했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "정리"
+      ]
+    },
+    {
+      "evidence_id": "ev_007",
+      "skill_key": "seo_sem",
+      "label_ko": "SEO/SEM",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "A/B 테스트 결과를 정리해 검색광고 예산 배분과 랜딩페이지 카피 수정 근거로 사용했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "검색광고"
+      ]
+    },
+    {
+      "evidence_id": "ev_008",
+      "skill_key": "budgeting_advanced",
+      "label_ko": "예산 수립 (고급)",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "캠페인 전환율을 22% 개선하고 비효율 광고 예산을 월 18% 줄였으며, 리포트 자동화로 주간 성과 회의 준비 시간을 5시간 단축했습니다.",
+      "confidence_score": 0.85,
+      "matched_keywords": [
+        "예산.*(?:절감|줄)"
+      ]
+    },
+    {
+      "evidence_id": "ev_009",
+      "skill_key": "marketing_analytics",
+      "label_ko": "마케팅 분석",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "캠페인 전환율을 22% 개선하고 비효율 광고 예산을 월 18% 줄였으며, 리포트 자동화로 주간 성과 회의 준비 시간을 5시간 단축했습니다.",
+      "confidence_score": 0.85,
+      "matched_keywords": [
+        "전환율.*(?:향상|개선|높)"
+      ]
+    },
+    {
+      "evidence_id": "ev_010",
+      "skill_key": "process_improvement",
+      "label_ko": "프로세스 개선",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "캠페인 전환율을 22% 개선하고 비효율 광고 예산을 월 18% 줄였으며, 리포트 자동화로 주간 성과 회의 준비 시간을 5시간 단축했습니다.",
+      "confidence_score": 0.61,
+      "matched_keywords": [
+        "자동화"
+      ]
+    },
+    {
+      "evidence_id": "ev_011",
+      "skill_key": "social_media",
+      "label_ko": "소셜 미디어",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "SNS 운영과 뉴스레터 콘텐츠 제작을 맡으며 채널별 가입자 반응을 데이터로 비교했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "sns",
+        "sns 운영"
+      ]
+    },
+    {
+      "evidence_id": "ev_012",
+      "skill_key": "churn_management",
+      "label_ko": "이탈 관리",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "사용자 세그먼트별 리텐션을 분석해 다음",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "리텐션"
+      ]
+    },
+    {
+      "evidence_id": "ev_013",
+      "skill_key": "reporting",
+      "label_ko": "보고/리포팅",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "뉴스레터 기반 가입 전환이 15% 증가했고, 캠페인 회고 문서가 정기 보고 자료로 채택됐습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "보고",
+        "정기 보고"
+      ]
+    },
+    {
+      "evidence_id": "ev_014",
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "evidence_type": "EXPLICIT",
+      "source": "target_priority_text",
+      "original_text": "퍼포먼스 마케팅과 데이터 분석이 연결된 역할을 목표로 합니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "데이터",
+        "분석"
+      ]
+    },
+    {
+      "evidence_id": "ev_015",
+      "skill_key": "marketing_analytics",
+      "label_ko": "마케팅 분석",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "퍼포먼스 마케팅과 데이터 분석이 연결된 역할을 목표로 합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "퍼포먼스 마케팅"
+      ]
+    },
+    {
+      "evidence_id": "ev_016",
+      "skill_key": "campaign_management",
+      "label_ko": "캠페인 관리",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "캠페인 성과를 SQL과 대시보드로 추적하고, 전환율 분석 결과를 콘텐츠와 광고 예산 조정에 반영하고 싶습니다.",
+      "confidence_score": 0.64,
+      "matched_keywords": [
+        "캠페인"
+      ]
+    },
+    {
+      "evidence_id": "ev_017",
+      "skill_key": "data_visualization",
+      "label_ko": "데이터 시각화",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "캠페인 성과를 SQL과 대시보드로 추적하고, 전환율 분석 결과를 콘텐츠와 광고 예산 조정에 반영하고 싶습니다.",
+      "confidence_score": 0.64,
+      "matched_keywords": [
+        "대시보드"
+      ]
+    }
   ],
   "scores": {"total": 70.0, "unique_total": 45.0, "common_total": 25.0, "core_penalty": -5.0, "breakdown": {"campaign_management": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 2, "confidence_total": 1.8}, "seo_sem": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "PARTIAL", "match_score": 0.5, "weighted_score": 8.13, "evidence_count": 1, "confidence_total": 0.7}, "content_marketing": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "WEAK", "match_score": 0.25, "weighted_score": 4.06, "evidence_count": 1, "confidence_total": 0.6}, "brand_management": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "NONE", "match_score": 0.0, "weighted_score": 0.0, "evidence_count": 0, "confidence_total": 0.0}}},
   "strengths": [{"skill_key": "campaign_management", "headline": "캠페인 관리: 마케팅 핵심 역량을 직접 수행한 검증된 경험", "detail": "캠페인 유입, 가입, 결제 전환율을 추적했습니다. 성과 기반 예산 조정까지 연결했습니다.", "rank": 1}, {"skill_key": "marketing_analytics", "headline": "마케팅 분석: 범용 역량 영역에서 실무 경험 확인", "detail": "GA와 광고 관리자 데이터를 비교해 ROAS 개선 소재를 찾았습니다. 데이터 기반 마케팅 의사결정 강점이 있습니다.", "rank": 2}, {"skill_key": "data_analysis", "headline": "데이터 분석: 직무 전반에 적용 가능한 범용 역량을 입증한 경험", "detail": "사용자 세그먼트와 리텐션을 분석해 캠페인 타깃을 조정했습니다. 데이터 secondary 신호가 명확합니다.", "rank": 3}],

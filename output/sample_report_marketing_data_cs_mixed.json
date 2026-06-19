@@ -5,14 +5,289 @@
   "targetJobAnalysis": {"primary_profile": "marketing", "primary_profile_label_ko": "마케팅", "secondary_profiles": ["data", "customer_success"], "unique_requirements": [{"requirement_key": "campaign_management", "label_ko": "캠페인 관리", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["marketing"]}, {"requirement_key": "seo_sem", "label_ko": "SEO/SEM", "weight": 0.1625, "is_core": true, "match_level": "PARTIAL", "source_profiles": ["marketing"]}, {"requirement_key": "content_marketing", "label_ko": "콘텐츠 마케팅", "weight": 0.1625, "is_core": true, "match_level": "STRONG", "source_profiles": ["marketing"]}, {"requirement_key": "brand_management", "label_ko": "브랜드 관리", "weight": 0.1625, "is_core": true, "match_level": "NONE", "source_profiles": ["marketing"]}], "common_requirements": [{"requirement_key": "communication", "label_ko": "커뮤니케이션", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["marketing"]}, {"requirement_key": "data_analysis", "label_ko": "데이터 분석", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["marketing"]}, {"requirement_key": "presentation", "label_ko": "발표/프레젠테이션", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["marketing"]}, {"requirement_key": "social_media", "label_ko": "소셜 미디어", "weight": 0.07, "is_core": false, "match_level": "STRONG", "source_profiles": ["marketing"]}, {"requirement_key": "marketing_analytics", "label_ko": "마케팅 분석", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["marketing"]}], "requirement_overview": "캠페인, 데이터 분석, 고객 온보딩 신호가 섞였지만 점수와 갭은 marketing primary 기준으로 산출합니다."},
   "skillMapping": {"matched": [{"skill_key": "campaign_management", "label_ko": "캠페인 관리", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}, {"skill_key": "content_marketing", "label_ko": "콘텐츠 마케팅", "skill_group": "UNIQUE", "match_level": "STRONG", "weight": 0.1625, "weighted_score": 12.19}, {"skill_key": "marketing_analytics", "label_ko": "마케팅 분석", "skill_group": "COMMON", "match_level": "FULL", "weight": 0.07, "weighted_score": 7.0}], "unmatched": [{"skill_key": "brand_management", "label_ko": "브랜드 관리", "skill_group": "UNIQUE", "match_level": "NONE", "weight": 0.1625, "weighted_score": 0.0}]},
   "evidenceMapping": [
-    {"evidence_id": "ev_001", "source": "career_histories[0].description", "text": "신규 고객 대상 마케팅 캠페인을 기획했습니다.", "skill_key": "marketing.campaign_management", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_002", "source": "career_histories[0].description", "text": "콘텐츠 제작, SNS 운영, 검색광고 소재 테스트를 관리했습니다.", "skill_key": "marketing.content_marketing", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_003", "source": "career_histories[0].description", "text": "SQL로 고객 온보딩 완료율과 전환율을 추적했습니다.", "skill_key": "data.sql", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_004", "source": "career_histories[0].description", "text": "BI 대시보드로 공유했습니다.", "skill_key": "data.data_visualization", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_005", "source": "career_histories[0].description", "text": "VOC와 NPS 분석 결과를 고객 성공팀에 전달했습니다.", "skill_key": "customer_success.customer_feedback_analysis", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_006", "source": "career_histories[1].description", "text": "신규 고객 도입 지원과 고객 문의 응대를 맡았습니다.", "skill_key": "customer_success.customer_onboarding", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_007", "source": "career_histories[1].description", "text": "리텐션 캠페인과 온보딩 안내 메일을 발송했습니다.", "skill_key": "customer_success.churn_management", "status": "POTENTIAL", "weight": 0.65},
-    {"evidence_id": "ev_008", "source": "target_priority_text", "text": "마케팅 캠페인 성과를 데이터로 해석하고 고객 온보딩과 리텐션 개선까지 연결하는 역할을 목표로 합니다.", "skill_key": "marketing.marketing_analytics", "status": "POTENTIAL", "weight": 0.35}
+    {
+      "evidence_id": "ev_001",
+      "skill_key": "campaign_management",
+      "label_ko": "캠페인 관리",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "신규 고객 대상 마케팅 캠페인을 기획하고 콘텐츠 제작, SNS 운영, 검색광고 소재 테스트를 관리했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "마케팅 캠페인",
+        "캠페인"
+      ]
+    },
+    {
+      "evidence_id": "ev_002",
+      "skill_key": "content_marketing",
+      "label_ko": "콘텐츠 마케팅",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "신규 고객 대상 마케팅 캠페인을 기획하고 콘텐츠 제작, SNS 운영, 검색광고 소재 테스트를 관리했습니다.",
+      "confidence_score": 0.64,
+      "matched_keywords": [
+        "콘텐츠 제작"
+      ]
+    },
+    {
+      "evidence_id": "ev_003",
+      "skill_key": "seo_sem",
+      "label_ko": "SEO/SEM",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "신규 고객 대상 마케팅 캠페인을 기획하고 콘텐츠 제작, SNS 운영, 검색광고 소재 테스트를 관리했습니다.",
+      "confidence_score": 0.64,
+      "matched_keywords": [
+        "검색광고"
+      ]
+    },
+    {
+      "evidence_id": "ev_004",
+      "skill_key": "social_media",
+      "label_ko": "소셜 미디어",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "신규 고객 대상 마케팅 캠페인을 기획하고 콘텐츠 제작, SNS 운영, 검색광고 소재 테스트를 관리했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "sns",
+        "sns 운영"
+      ]
+    },
+    {
+      "evidence_id": "ev_005",
+      "skill_key": "customer_onboarding",
+      "label_ko": "고객 온보딩",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "SQL로 가입 이후 고객 온보딩 완료율과 전환율을 추적해 BI 대시보드로 공유했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "고객 온보딩"
+      ]
+    },
+    {
+      "evidence_id": "ev_006",
+      "skill_key": "data_visualization",
+      "label_ko": "데이터 시각화",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "SQL로 가입 이후 고객 온보딩 완료율과 전환율을 추적해 BI 대시보드로 공유했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "bi",
+        "대시보드"
+      ]
+    },
+    {
+      "evidence_id": "ev_007",
+      "skill_key": "presentation",
+      "label_ko": "발표/프레젠테이션",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "SQL로 가입 이후 고객 온보딩 완료율과 전환율을 추적해 BI 대시보드로 공유했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "공유"
+      ]
+    },
+    {
+      "evidence_id": "ev_008",
+      "skill_key": "training_and_onboarding",
+      "label_ko": "교육/온보딩",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "SQL로 가입 이후 고객 온보딩 완료율과 전환율을 추적해 BI 대시보드로 공유했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "온보딩"
+      ]
+    },
+    {
+      "evidence_id": "ev_009",
+      "skill_key": "account_health",
+      "label_ko": "계정 헬스 관리",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "VOC와 NPS 분석 결과를 고객 성공팀에 전달하고 이탈 방지 메시지를 함께 설계했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "nps"
+      ]
+    },
+    {
+      "evidence_id": "ev_010",
+      "skill_key": "churn_management",
+      "label_ko": "이탈 관리",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "VOC와 NPS 분석 결과를 고객 성공팀에 전달하고 이탈 방지 메시지를 함께 설계했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "이탈 방지"
+      ]
+    },
+    {
+      "evidence_id": "ev_011",
+      "skill_key": "customer_feedback_analysis",
+      "label_ko": "고객 피드백 분석",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "캠페인 전환율을 20% 높이고 온보딩 완료율을 64%에서 78%로 개선했으며, 고객 피드백 분석을 반영한 안내 콘텐츠로 초기 이탈률을 14% 낮췄습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "고객 피드백 분석",
+        "피드백 분석"
+      ]
+    },
+    {
+      "evidence_id": "ev_012",
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "VOC와 NPS 분석 결과를 고객 성공팀에 전달하고 이탈 방지 메시지를 함께 설계했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "분석"
+      ]
+    },
+    {
+      "evidence_id": "ev_013",
+      "skill_key": "marketing_analytics",
+      "label_ko": "마케팅 분석",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "캠페인 전환율을 20% 높이고 온보딩 완료율을 64%에서 78%로 개선했으며, 고객 피드백 분석을 반영한 안내 콘텐츠로 초기 이탈률을 14% 낮췄습니다.",
+      "confidence_score": 0.85,
+      "matched_keywords": [
+        "전환율.*(?:향상|개선|높)"
+      ]
+    },
+    {
+      "evidence_id": "ev_014",
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "신규 고객 도입 지원과 고객 문의 응대를 맡으며 반복 VOC를 분류했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "문의 응대"
+      ]
+    },
+    {
+      "evidence_id": "ev_015",
+      "skill_key": "support_ticketing",
+      "label_ko": "고객 지원 티켓 처리",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "신규 고객 도입 지원과 고객 문의 응대를 맡으며 반복 VOC를 분류했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "고객 문의",
+        "고객 문의 응대"
+      ]
+    },
+    {
+      "evidence_id": "ev_016",
+      "skill_key": "renewal_management",
+      "label_ko": "갱신 관리",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "계약 갱신율이 전 분기 대비 11% 상승했고, 고객 문의 응답 지연 건수가 절반으로 줄었습니다.",
+      "confidence_score": 0.85,
+      "matched_keywords": [
+        "갱신율",
+        "계약 갱신"
+      ]
+    },
+    {
+      "evidence_id": "ev_017",
+      "skill_key": "campaign_management",
+      "label_ko": "캠페인 관리",
+      "evidence_type": "EXPLICIT",
+      "source": "target_priority_text",
+      "original_text": "마케팅 캠페인 성과를 데이터로 해석하고 고객 온보딩과 리텐션 개선까지 연결하는 역할을 목표로 합니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "마케팅 캠페인",
+        "캠페인"
+      ]
+    },
+    {
+      "evidence_id": "ev_018",
+      "skill_key": "churn_management",
+      "label_ko": "이탈 관리",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "마케팅 캠페인 성과를 데이터로 해석하고 고객 온보딩과 리텐션 개선까지 연결하는 역할을 목표로 합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "리텐션"
+      ]
+    },
+    {
+      "evidence_id": "ev_019",
+      "skill_key": "customer_onboarding",
+      "label_ko": "고객 온보딩",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "마케팅 캠페인 성과를 데이터로 해석하고 고객 온보딩과 리텐션 개선까지 연결하는 역할을 목표로 합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "고객 온보딩"
+      ]
+    },
+    {
+      "evidence_id": "ev_020",
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "마케팅 캠페인 성과를 데이터로 해석하고 고객 온보딩과 리텐션 개선까지 연결하는 역할을 목표로 합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "데이터"
+      ]
+    },
+    {
+      "evidence_id": "ev_021",
+      "skill_key": "training_and_onboarding",
+      "label_ko": "교육/온보딩",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "마케팅 캠페인 성과를 데이터로 해석하고 고객 온보딩과 리텐션 개선까지 연결하는 역할을 목표로 합니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "온보딩"
+      ]
+    },
+    {
+      "evidence_id": "ev_022",
+      "skill_key": "brand_management",
+      "label_ko": "브랜드 관리",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "VOC와 전환율 분석을 함께 보며 브랜드 메시지와 고객 성공 경험을 개선하고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "브랜드"
+      ]
+    },
+    {
+      "evidence_id": "ev_023",
+      "skill_key": "marketing_analytics",
+      "label_ko": "마케팅 분석",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "VOC와 전환율 분석을 함께 보며 브랜드 메시지와 고객 성공 경험을 개선하고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "전환율 분석"
+      ]
+    }
   ],
   "scores": {"total": 63.0, "unique_total": 39.0, "common_total": 24.0, "core_penalty": -5.0, "breakdown": {"campaign_management": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 2, "confidence_total": 1.8}, "seo_sem": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "PARTIAL", "match_score": 0.5, "weighted_score": 8.13, "evidence_count": 1, "confidence_total": 0.7}, "content_marketing": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "STRONG", "match_score": 0.75, "weighted_score": 12.19, "evidence_count": 1, "confidence_total": 1.0}, "brand_management": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "NONE", "match_score": 0.0, "weighted_score": 0.0, "evidence_count": 0, "confidence_total": 0.0}}},
   "strengths": [{"skill_key": "campaign_management", "headline": "캠페인 관리: 마케팅 핵심 역량을 직접 수행한 검증된 경험", "detail": "신규 고객 대상 캠페인을 기획했습니다. 온보딩 완료율 개선 성과와 연결됩니다.", "rank": 1}, {"skill_key": "marketing_analytics", "headline": "마케팅 분석: 범용 역량 영역에서 실무 경험 확인", "detail": "전환율과 온보딩 완료율을 추적하고 대시보드로 공유했습니다. 데이터 secondary 신호도 분명합니다.", "rank": 2}, {"skill_key": "content_marketing", "headline": "콘텐츠 마케팅: 마케팅 핵심 역량에서 실무 경험 확인", "detail": "콘텐츠 제작과 SNS 운영 경험이 있습니다. 고객 성공 목적의 안내 콘텐츠와도 연결됩니다.", "rank": 3}],

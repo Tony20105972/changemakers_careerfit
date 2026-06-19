@@ -5,10 +5,102 @@
   "targetJobAnalysis": {"primary_profile": "operations", "primary_profile_label_ko": "운영(Operations)", "secondary_profiles": [], "unique_requirements": [{"requirement_key": "process_improvement", "label_ko": "프로세스 개선", "weight": 0.1625, "is_core": true, "match_level": "WEAK", "source_profiles": ["operations"]}, {"requirement_key": "resource_planning", "label_ko": "리소스 계획", "weight": 0.1625, "is_core": true, "match_level": "NONE", "source_profiles": ["operations"]}, {"requirement_key": "quality_control", "label_ko": "품질 관리", "weight": 0.1625, "is_core": true, "match_level": "WEAK", "source_profiles": ["operations"]}, {"requirement_key": "vendor_management", "label_ko": "외부 협력 관리", "weight": 0.1625, "is_core": true, "match_level": "NONE", "source_profiles": ["operations"]}], "common_requirements": [{"requirement_key": "communication", "label_ko": "커뮤니케이션", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["operations"]}, {"requirement_key": "documentation", "label_ko": "문서화", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["operations"]}, {"requirement_key": "problem_solving", "label_ko": "문제 해결", "weight": 0.07, "is_core": false, "match_level": "WEAK", "source_profiles": ["operations"]}, {"requirement_key": "schedule_management", "label_ko": "일정 관리", "weight": 0.07, "is_core": false, "match_level": "WEAK", "source_profiles": ["operations"]}, {"requirement_key": "stakeholder_management", "label_ko": "이해관계자 관리", "weight": 0.07, "is_core": false, "match_level": "NONE", "source_profiles": ["operations"]}], "requirement_overview": "근거가 부족해 운영 보조 경험에서 확인되는 절차 준수와 고객 응대 신호를 기준으로 fallback 분석했습니다."},
   "skillMapping": {"matched": [{"skill_key": "process_improvement", "label_ko": "프로세스 개선", "skill_group": "UNIQUE", "match_level": "WEAK", "weight": 0.1625, "weighted_score": 4.06}, {"skill_key": "quality_control", "label_ko": "품질 관리", "skill_group": "UNIQUE", "match_level": "WEAK", "weight": 0.1625, "weighted_score": 4.06}, {"skill_key": "documentation", "label_ko": "문서화", "skill_group": "COMMON", "match_level": "PARTIAL", "weight": 0.07, "weighted_score": 3.5}], "unmatched": [{"skill_key": "vendor_management", "label_ko": "외부 협력 관리", "skill_group": "UNIQUE", "match_level": "NONE", "weight": 0.1625, "weighted_score": 0.0}]},
   "evidenceMapping": [
-    {"evidence_id": "ev_001", "source": "career_histories[0].description", "text": "예약 확인과 간단한 고객 응대를 도왔습니다.", "skill_key": "operations.coordination", "status": "POTENTIAL", "weight": 0.35},
-    {"evidence_id": "ev_002", "source": "career_histories[0].description", "text": "엑셀로 명단을 정리하고 담당자에게 전달했습니다.", "skill_key": "operations.process_design", "status": "POTENTIAL", "weight": 0.35},
-    {"evidence_id": "ev_003", "source": "career_histories[0].description", "text": "정해진 절차에 따라 물품 수량을 확인했습니다.", "skill_key": "operations.quality_control", "status": "POTENTIAL", "weight": 0.35},
-    {"evidence_id": "ev_004", "source": "target_priority_text", "text": "여러 업무를 경험해 보고 제게 맞는 방향을 찾고 싶습니다.", "skill_key": "operations.process_improvement", "status": "POTENTIAL", "weight": 0.65}
+    {
+      "evidence_id": "ev_001",
+      "skill_key": "communication",
+      "label_ko": "커뮤니케이션",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "매장 운영팀에서 예약 확인과 간단한 고객 응대를 도왔습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "고객 응대"
+      ]
+    },
+    {
+      "evidence_id": "ev_002",
+      "skill_key": "quality_control",
+      "label_ko": "품질 관리 기초",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "매장 운영팀에서 예약 확인과 간단한 고객 응대를 도왔습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "확인"
+      ]
+    },
+    {
+      "evidence_id": "ev_003",
+      "skill_key": "support_ticketing",
+      "label_ko": "고객 지원 티켓 처리",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "매장 운영팀에서 예약 확인과 간단한 고객 응대를 도왔습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "고객 응대"
+      ]
+    },
+    {
+      "evidence_id": "ev_004",
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "필요할 때 엑셀로 명단을 정리하고 담당자에게 전달했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "정리"
+      ]
+    },
+    {
+      "evidence_id": "ev_005",
+      "skill_key": "excel",
+      "label_ko": "Excel/스프레드시트",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "필요할 때 엑셀로 명단을 정리하고 담당자에게 전달했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "엑셀"
+      ]
+    },
+    {
+      "evidence_id": "ev_006",
+      "skill_key": "process_design",
+      "label_ko": "프로세스 설계",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "정해진 절차에 따라 물품 수량을 확인했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "절차"
+      ]
+    },
+    {
+      "evidence_id": "ev_007",
+      "skill_key": "process_improvement",
+      "label_ko": "프로세스 개선",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "여러 업무를 경험해 보고 제게 맞는 방향을 찾고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "업무"
+      ]
+    },
+    {
+      "evidence_id": "ev_008",
+      "skill_key": "reporting",
+      "label_ko": "보고/리포팅",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "여러 업무를 경험해 보고 제게 맞는 방향을 찾고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "보고"
+      ]
+    }
   ],
   "scores": {"total": 38.0, "unique_total": 22.0, "common_total": 16.0, "core_penalty": -5.0, "breakdown": {"process_improvement": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "WEAK", "match_score": 0.25, "weighted_score": 4.06, "evidence_count": 1, "confidence_total": 0.4}, "quality_control": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "WEAK", "match_score": 0.25, "weighted_score": 4.06, "evidence_count": 1, "confidence_total": 0.5}, "documentation": {"weight": 0.07, "skill_group": "COMMON", "match_level": "PARTIAL", "match_score": 0.5, "weighted_score": 3.5, "evidence_count": 1, "confidence_total": 0.5}}},
   "strengths": [{"skill_key": "process_adherence", "headline": "절차 준수: 운영 업무의 기초 신호가 확인됩니다", "detail": "정해진 절차에 따라 물품 수량을 확인한 경험이 있습니다. 다만 기간과 범위가 짧아 추정 기반으로 해석해야 합니다.", "rank": 1}, {"skill_key": "customer_support", "headline": "고객 응대: 제한적인 현장 경험이 있습니다", "detail": "예약 확인과 간단한 고객 응대 경험이 확인됩니다. 반복 업무에서 기본적인 소통 경험을 쌓았습니다.", "rank": 2}, {"skill_key": "documentation", "headline": "문서화: 기본 정리 업무 경험이 있습니다", "detail": "명단을 정리해 담당자에게 전달한 경험이 있습니다. 운영 기록 관리로 확장할 수 있는 작은 근거입니다.", "rank": 3}],

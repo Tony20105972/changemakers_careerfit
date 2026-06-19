@@ -5,14 +5,193 @@
   "targetJobAnalysis": {"primary_profile": "engineering", "primary_profile_label_ko": "엔지니어링", "secondary_profiles": ["operations"], "unique_requirements": [{"requirement_key": "software_development", "label_ko": "소프트웨어 개발", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["engineering"]}, {"requirement_key": "code_review", "label_ko": "코드 리뷰", "weight": 0.1625, "is_core": true, "match_level": "STRONG", "source_profiles": ["engineering"]}, {"requirement_key": "system_design", "label_ko": "시스템 설계", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["engineering"]}, {"requirement_key": "debugging", "label_ko": "디버깅", "weight": 0.1625, "is_core": true, "match_level": "FULL", "source_profiles": ["engineering"]}], "common_requirements": [{"requirement_key": "documentation", "label_ko": "문서화", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["engineering"]}, {"requirement_key": "problem_solving", "label_ko": "문제 해결", "weight": 0.07, "is_core": false, "match_level": "STRONG", "source_profiles": ["engineering"]}, {"requirement_key": "api_design", "label_ko": "API 설계", "weight": 0.07, "is_core": false, "match_level": "FULL", "source_profiles": ["engineering"]}, {"requirement_key": "testing_qa", "label_ko": "테스트/QA", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["engineering"]}, {"requirement_key": "crossfunctional_collab", "label_ko": "부서간 협업", "weight": 0.07, "is_core": false, "match_level": "PARTIAL", "source_profiles": ["engineering"]}], "requirement_overview": "백엔드 기능 개발, 시스템 설계, 장애 분석 evidence가 엔지니어링 requirement에 집중되어 있습니다."},
   "skillMapping": {"matched": [{"skill_key": "software_development", "label_ko": "소프트웨어 개발", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}, {"skill_key": "system_design", "label_ko": "시스템 설계", "skill_group": "UNIQUE", "match_level": "FULL", "weight": 0.1625, "weighted_score": 16.25}, {"skill_key": "api_design", "label_ko": "API 설계", "skill_group": "COMMON", "match_level": "FULL", "weight": 0.07, "weighted_score": 7.0}], "unmatched": [{"skill_key": "testing_qa", "label_ko": "테스트/QA", "skill_group": "COMMON", "match_level": "PARTIAL", "weight": 0.07, "weighted_score": 3.5}]},
   "evidenceMapping": [
-    {"evidence_id": "ev_001", "source": "career_histories[0].description", "text": "결제 정산 기능을 개발했습니다.", "skill_key": "engineering.software_development", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_002", "source": "career_histories[0].description", "text": "REST API 설계 문서를 작성해 프론트엔드와 연동 범위를 맞췄습니다.", "skill_key": "engineering.api_design", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_003", "source": "career_histories[0].description", "text": "큐 기반 아키텍처로 시스템 설계를 개선했습니다.", "skill_key": "engineering.system_design", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_004", "source": "career_histories[0].description", "text": "주 2회 코드 리뷰를 진행했습니다.", "skill_key": "engineering.code_review", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_005", "source": "career_histories[0].description", "text": "배포 후 장애 8건을 원인 분석해 재발 방지 체크리스트로 문서화했습니다.", "skill_key": "engineering.debugging", "status": "ACHIEVED", "weight": 0.65},
-    {"evidence_id": "ev_006", "source": "career_histories[0].description", "text": "배포 전 단위 테스트와 통합 테스트를 점검했습니다.", "skill_key": "engineering.testing_qa", "status": "POTENTIAL", "weight": 0.35},
-    {"evidence_id": "ev_007", "source": "career_histories[1].description", "text": "OpenAPI 명세를 정리해 외부 파트너 연동 일정을 조율했습니다.", "skill_key": "engineering.documentation", "status": "ACHIEVED", "weight": 0.35},
-    {"evidence_id": "ev_008", "source": "target_priority_text", "text": "백엔드 개발자로서 안정적인 API 설계와 시스템 설계를 맡고 싶습니다.", "skill_key": "engineering.system_design", "status": "POTENTIAL", "weight": 0.65}
+    {
+      "evidence_id": "ev_001",
+      "skill_key": "api_design",
+      "label_ko": "API 설계",
+      "evidence_type": "EXPLICIT",
+      "source": "career_histories",
+      "original_text": "결제 정산 기능을 개발하고 REST API 설계 문서를 작성해 프론트엔드와 연동 범위를 맞췄습니다.",
+      "confidence_score": 0.95,
+      "matched_keywords": [
+        "api",
+        "api 설계",
+        "rest api"
+      ]
+    },
+    {
+      "evidence_id": "ev_002",
+      "skill_key": "documentation",
+      "label_ko": "문서화",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "API 응답 시간을 35% 개선했으며, 배포 후 장애 8건을 원인 분석해 재발 방지 체크리스트로 문서화했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "문서",
+        "문서화"
+      ]
+    },
+    {
+      "evidence_id": "ev_003",
+      "skill_key": "software_development",
+      "label_ko": "소프트웨어 개발",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "결제 정산 기능을 개발하고 REST API 설계 문서를 작성해 프론트엔드와 연동 범위를 맞췄습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "기능을 개발"
+      ]
+    },
+    {
+      "evidence_id": "ev_004",
+      "skill_key": "content_marketing",
+      "label_ko": "콘텐츠 마케팅",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "트래픽 증가에 맞춰 큐 기반 아키텍처로 시스템 설계를 개선하고 배포 전 단위 테스트와 통합 테스트를 점검했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "(?:mau|트래픽).*증가"
+      ]
+    },
+    {
+      "evidence_id": "ev_005",
+      "skill_key": "system_design",
+      "label_ko": "시스템 설계",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "트래픽 증가에 맞춰 큐 기반 아키텍처로 시스템 설계를 개선하고 배포 전 단위 테스트와 통합 테스트를 점검했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "시스템 설계",
+        "아키텍처"
+      ]
+    },
+    {
+      "evidence_id": "ev_006",
+      "skill_key": "testing_qa",
+      "label_ko": "테스트/QA",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "트래픽 증가에 맞춰 큐 기반 아키텍처로 시스템 설계를 개선하고 배포 전 단위 테스트와 통합 테스트를 점검했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "단위 테스트",
+        "통합 테스트"
+      ]
+    },
+    {
+      "evidence_id": "ev_007",
+      "skill_key": "code_review",
+      "label_ko": "코드 리뷰",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "주 2회 코드 리뷰를 진행하며 장애 가능성이 있는 로직을 사전에 수정했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "코드 리뷰"
+      ]
+    },
+    {
+      "evidence_id": "ev_008",
+      "skill_key": "debugging",
+      "label_ko": "디버깅",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "반복 문의가 많던 예약 취소 오류를 해결해 CS 티켓이 30% 감소했습니다.",
+      "confidence_score": 0.85,
+      "matched_keywords": [
+        "오류"
+      ]
+    },
+    {
+      "evidence_id": "ev_009",
+      "skill_key": "data_analysis",
+      "label_ko": "데이터 분석",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "API 응답 시간을 35% 개선했으며, 배포 후 장애 8건을 원인 분석해 재발 방지 체크리스트로 문서화했습니다.",
+      "confidence_score": 0.63,
+      "matched_keywords": [
+        "분석"
+      ]
+    },
+    {
+      "evidence_id": "ev_010",
+      "skill_key": "coordination",
+      "label_ko": "일정/업무 조율",
+      "evidence_type": "INFERRED",
+      "source": "career_histories",
+      "original_text": "OpenAPI 명세를 정리해 외부 파트너 연동 일정을 조율했습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "조율"
+      ]
+    },
+    {
+      "evidence_id": "ev_011",
+      "skill_key": "support_ticketing",
+      "label_ko": "고객 지원 티켓 처리",
+      "evidence_type": "ACHIEVED",
+      "source": "career_histories",
+      "original_text": "반복 문의가 많던 예약 취소 오류를 해결해 CS 티켓이 30% 감소했습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "cs",
+        "cs 티켓"
+      ]
+    },
+    {
+      "evidence_id": "ev_012",
+      "skill_key": "api_design",
+      "label_ko": "API 설계",
+      "evidence_type": "EXPLICIT",
+      "source": "target_priority_text",
+      "original_text": "백엔드 개발자로서 안정적인 API 설계와 시스템 설계를 맡고 싶습니다.",
+      "confidence_score": 0.8,
+      "matched_keywords": [
+        "api",
+        "api 설계"
+      ]
+    },
+    {
+      "evidence_id": "ev_013",
+      "skill_key": "system_design",
+      "label_ko": "시스템 설계",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "백엔드 개발자로서 안정적인 API 설계와 시스템 설계를 맡고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "시스템 설계"
+      ]
+    },
+    {
+      "evidence_id": "ev_014",
+      "skill_key": "code_review",
+      "label_ko": "코드 리뷰",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "코드 리뷰와 테스트 자동화를 통해 배포 품질을 높이는 엔지니어링 조직에서 일하고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "코드 리뷰"
+      ]
+    },
+    {
+      "evidence_id": "ev_015",
+      "skill_key": "process_improvement",
+      "label_ko": "프로세스 개선",
+      "evidence_type": "INFERRED",
+      "source": "target_priority_text",
+      "original_text": "코드 리뷰와 테스트 자동화를 통해 배포 품질을 높이는 엔지니어링 조직에서 일하고 싶습니다.",
+      "confidence_score": 0.65,
+      "matched_keywords": [
+        "자동화"
+      ]
+    }
   ],
   "scores": {"total": 79.0, "unique_total": 53.0, "common_total": 26.0, "core_penalty": 0.0, "breakdown": {"software_development": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 2, "confidence_total": 1.9}, "code_review": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "STRONG", "match_score": 0.75, "weighted_score": 12.19, "evidence_count": 1, "confidence_total": 1.0}, "system_design": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 2, "confidence_total": 1.8}, "debugging": {"weight": 0.1625, "skill_group": "UNIQUE", "match_level": "FULL", "match_score": 1.0, "weighted_score": 16.25, "evidence_count": 1, "confidence_total": 0.9}}},
   "strengths": [{"skill_key": "software_development", "headline": "소프트웨어 개발: 엔지니어링 핵심 역량을 직접 수행한 검증된 경험", "detail": "결제 정산 기능과 예약 관리 기능 구현 경험이 있습니다. 주요 API 응답 시간 개선 성과도 확인됩니다.", "rank": 1}, {"skill_key": "system_design", "headline": "시스템 설계: 엔지니어링 핵심 역량에서 실무 경험 확인", "detail": "트래픽 증가에 맞춰 큐 기반 아키텍처를 설계했습니다. 목표 직무에서도 시스템 설계를 명확히 언급했습니다.", "rank": 2}, {"skill_key": "debugging", "headline": "디버깅: 엔지니어링 핵심 역량을 직접 수행한 검증된 경험", "detail": "장애 8건을 원인 분석하고 재발 방지 체크리스트로 문서화했습니다. 운영 문의 감소 성과도 있습니다.", "rank": 3}],

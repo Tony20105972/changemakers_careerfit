@@ -212,8 +212,12 @@ def select_profile(fixture: dict) -> dict:
     corpus = extract_text_corpus(fixture)
     profile_scores = score_profiles(corpus, taxonomy, requirements)
     primary, secondary = select_primary_and_secondary(profile_scores)
+    secondary = _merge_secondary_hints(corpus, primary, secondary, profile_scores)
     evidence_count = count_evidence(corpus, taxonomy, primary)
     confidence = classify_confidence(evidence_count)
+    evidence_count, confidence = _adjust_confidence_for_ambiguity(
+        primary, secondary, profile_scores, evidence_count, confidence
+    )
     if confidence == "LOW":
         secondary = []
     primary, warning = apply_fallback(primary, confidence)
@@ -286,6 +290,52 @@ def _count_alias(corpus: str, alias: str) -> int:
         return 0
     pattern = r"(?<![0-9a-zA-Z])" + re.escape(value) + r"(?![0-9a-zA-Z])"
     return len(re.findall(pattern, corpus))
+
+
+def _merge_secondary_hints(
+    corpus: str,
+    primary: str,
+    secondary: list[str],
+    profile_scores: dict[str, float],
+) -> list[str]:
+    priority_aliases = {
+        "operations": ["운영", "운영팀", "프로세스", "표준화", "벤더"],
+        "product": ["제품", "prd", "요구사항", "로드맵"],
+        "data": ["데이터", "분석", "대시보드", "sql", "ga"],
+        "customer_success": ["고객 온보딩", "voc", "리텐션", "고객 성공"],
+    }
+    merged = list(secondary)
+    hinted = []
+    for profile_id, aliases in sorted(priority_aliases.items()):
+        if profile_id == primary:
+            continue
+        hint_count = sum(_count_alias(corpus, alias) for alias in aliases)
+        score = profile_scores.get(profile_id, 0.0)
+        if hint_count and score > ZERO_TOLERANCE:
+            hinted.append((profile_id, hint_count, score))
+    hinted.sort(key=lambda item: (-item[1], -item[2], item[0]))
+    for profile_id, _, _ in hinted:
+        if profile_id not in merged:
+            merged.append(profile_id)
+        if len(merged) >= MAX_SECONDARY_PROFILES:
+            break
+    return merged[:MAX_SECONDARY_PROFILES]
+
+
+def _adjust_confidence_for_ambiguity(
+    primary: str,
+    secondary: list[str],
+    profile_scores: dict[str, float],
+    evidence_count: int,
+    confidence: str,
+) -> tuple[int, str]:
+    primary_score = profile_scores.get(primary, 0.0)
+    if confidence == "HIGH" and len(secondary) >= 2 and primary_score > ZERO_TOLERANCE:
+        second_secondary = profile_scores.get(secondary[1], 0.0)
+        if second_secondary / primary_score >= 0.4:
+            adjusted_count = min(evidence_count, CONFIDENCE_HIGH_THRESHOLD - 1)
+            return adjusted_count, classify_confidence(adjusted_count)
+    return evidence_count, confidence
 
 
 def _selection_reason(primary: str, secondary: list[str], evidence_count: int, confidence: str) -> str:

@@ -10,8 +10,10 @@ from pathlib import Path
 
 REQUIREMENTS_DIR = Path("data/generated")
 FULL_THRESHOLD = 0.8
+CONSERVATIVE_FULL_THRESHOLD = 0.85
 STRONG_THRESHOLD = 0.6
 PARTIAL_THRESHOLD = 0.5
+CONSERVATIVE_FULL_PROFILES = ["hr", "marketing"]
 MATCH_SCORE = {
     "FULL": 1.0,
     "STRONG": 0.75,
@@ -43,14 +45,8 @@ def classify_match_level(requirement: dict, evidence_list: list[dict]) -> tuple[
     """requirement 1개에 대해 가장 높은 match_level을 반환."""
     exact_candidates = _matching_exact_evidence(requirement, evidence_list)
     if exact_candidates:
-        selected = _best_evidence(exact_candidates)
-        confidence = round(float(selected.get("confidence_score", 0.0)), 2)
-        if confidence >= FULL_THRESHOLD:
-            return "FULL", MATCH_SCORE["FULL"], selected
-        if confidence >= STRONG_THRESHOLD:
-            return "STRONG", MATCH_SCORE["STRONG"], selected
-        if confidence >= PARTIAL_THRESHOLD:
-            return "PARTIAL", MATCH_SCORE["PARTIAL"], selected
+        selected, match_level = _best_exact_evidence(requirement, exact_candidates)
+        return match_level, MATCH_SCORE[match_level], selected
     weak_candidates = _matching_weak_evidence(requirement, evidence_list)
     if weak_candidates:
         selected = _best_evidence(weak_candidates)
@@ -103,6 +99,42 @@ def _best_evidence(candidates: list[dict]) -> dict:
         candidates,
         key=lambda item: (-float(item.get("confidence_score", 0.0)), str(item.get("evidence_id", ""))),
     )[0]
+
+
+def _best_exact_evidence(requirement: dict, candidates: list[dict]) -> tuple[dict, str]:
+    ranked = []
+    for evidence in candidates:
+        match_level = _exact_match_level(requirement, evidence)
+        ranked.append((evidence, match_level))
+    return sorted(
+        ranked,
+        key=lambda item: (
+            -MATCH_SCORE[item[1]],
+            -float(item[0].get("confidence_score", 0.0)),
+            str(item[0].get("evidence_id", "")),
+        ),
+    )[0]
+
+
+def _exact_match_level(requirement: dict, evidence: dict) -> str:
+    confidence = round(float(evidence.get("confidence_score", 0.0)), 2)
+    if evidence.get("source") == "target_priority_text":
+        if confidence >= STRONG_THRESHOLD:
+            return "PARTIAL"
+        return "WEAK"
+    if confidence >= _full_threshold_for_requirement(requirement):
+        return "FULL"
+    if confidence >= STRONG_THRESHOLD:
+        return "STRONG"
+    return "PARTIAL"
+
+
+def _full_threshold_for_requirement(requirement: dict) -> float:
+    source_profiles = requirement.get("source_profiles") or []
+    profile_id = source_profiles[0] if source_profiles else ""
+    if profile_id in CONSERVATIVE_FULL_PROFILES:
+        return CONSERVATIVE_FULL_THRESHOLD
+    return FULL_THRESHOLD
 
 
 def _share_requirement_profile(requirement_skill: str, evidence_skill: str) -> bool:

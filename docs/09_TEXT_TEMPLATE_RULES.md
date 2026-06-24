@@ -5,6 +5,19 @@ LLM은 이 템플릿 결과를 **윤색만** 가능. 내용 변경 불가. (`00_
 
 > **v3.1 변경:** `{job_family_ko}` 단일 라벨 변수 → `{primary_profile_label_ko}`로 대체.  
 > §2(Primary Profile Explanation), §3(LOW Warning), §4(Score Split) 추가.
+> **v1.5 정렬:** strengths/gaps는 엔진 출력 스키마를 그대로 사용한다.
+
+---
+
+## 0. 책임 경계
+
+| 책임 | 소유 모듈 | 설명 |
+|------|-----------|------|
+| `strengths[].headline` | `strength_selector.py` | 스킬/직무 맥락/근거 수를 담은 짧은 결정론 문장 |
+| `gaps[].reason` | `gap_analyzer.py` | match_level, 대표 evidence, confidence를 담은 짧은 결정론 문장 |
+| `gaps[].recommendation_hint` | `gap_analyzer.py` | gap별 후속 행동을 안내하는 짧은 hint 문장 |
+| `summary`, `final_assessment`, `roadmap` | `text_template.py` | 리포트 요약, 최종 판단, 단계별 행동 문장 생성 |
+| LLM | optional polish | 템플릿 결과의 윤색만 허용. 필드, 점수, 항목, 순서 변경 금지 |
 
 ---
 
@@ -23,7 +36,7 @@ SUMMARY_TEMPLATES = {
 |------|------|
 | `{primary_profile_label_ko}` | `meta.primary_profile` 라벨 lookup 결과 |
 | `{score}` | `summary.total_score` |
-| `{top_gap_label_ko}` | `gaps[0].label_ko` (priority_order=1) |
+| `{top_gap_label_ko}` | `gaps[0].label_ko` (`rank=1`) |
 | `{unique_score}` | `summary.unique_score` |
 
 ---
@@ -79,52 +92,82 @@ def select_split_template(unique_score: float, common_score: float) -> str:
 
 ---
 
-## 5. 강점 문장 (`strengths[].headline`, `.detail`)
+## 5. 강점 텍스트 입력 (`strengths[]`)
+
+`strengths[]`는 `05_REPORT_SCHEMA.md` §8의 v1.5 구조를 사용한다.
+`text_template.py`는 강점 항목을 새로 판정하지 않고 아래 필드만 문장 재료로 사용한다.
+
+| 필드 | 텍스트 사용 |
+|------|-------------|
+| `headline` | 강점 카드/요약의 기본 문장. 엔진이 생성한 원문을 유지 |
+| `strength_score` | 강점 강조 정도 산정. 값 변경 금지 |
+| `evidence_ids` | 근거 참조 연결. 존재하지 않는 evidence를 새로 만들지 않음 |
+| `match_level` | `FULL > STRONG > PARTIAL` 순으로 표현 강도 조절 |
+| `skill_key`, `label_ko` | summary/key_strengths/본문 라벨 표시 |
 
 ```python
-STRENGTH_HEADLINE_TEMPLATES = {
-    ("UNIQUE", "FULL"):   "{label_ko}: {primary_profile_label_ko} 핵심 역량을 직접 수행한 검증된 경험",
-    ("UNIQUE", "STRONG"): "{label_ko}: {primary_profile_label_ko} 핵심 역량에서 실무 경험 확인",
-    ("COMMON", "FULL"):   "{label_ko}: 직무 전반에 적용 가능한 범용 역량을 입증한 경험",
-    ("COMMON", "STRONG"): "{label_ko}: 범용 역량 영역에서 실무 경험 확인",
+STRENGTH_EMPHASIS_LABELS = {
+    "FULL": "명확한 강점",
+    "STRONG": "충분한 강점",
+    "PARTIAL": "보완 중인 강점",
 }
-
-STRENGTH_DETAIL_TEMPLATE = (
-    "{evidence_summary}. "
-    "{achievement_clause}"
-    "{priority_clause}"
-)
-# evidence_summary: original_text를 자연어로 재구성 (사실관계 변경 불가)
-# achievement_clause: ACHIEVED 타입 evidence가 있으면 "이를 통해 {metric}이라는 구체적 성과를 달성했습니다." / 없으면 빈 문자열
-# priority_clause: source="target_priority_text" evidence가 있으면 "이 역량은 목표 직무에서도 중요하게 언급되었습니다." / 없으면 빈 문자열 (v3 신규)
 ```
+
+`evidence_ids`가 비어 있으면 근거 상세 문장을 만들지 않고 `headline`만 사용한다.
+LOW confidence에서는 `meta.warning_message`와 함께 추정 가능성을 유지한다.
 
 ---
 
-## 6. Gap 문장 (`gaps[].headline`, `.detail`)
+## 6. Gap 텍스트 입력 (`gaps[]`)
+
+`gaps[]`는 `05_REPORT_SCHEMA.md` §9의 v1.5 구조를 사용한다.
+gap 후보는 `NONE`, `WEAK`, `PARTIAL`만 허용하며 `STRONG`, `FULL`은 제외한다.
 
 ```python
-GAP_HEADLINE_TEMPLATES = {
-    ("UNIQUE", "CRITICAL"): "{label_ko} 역량 확보가 시급합니다",
-    ("UNIQUE", "MAJOR"):    "{label_ko} 역량 보강이 필요합니다",
-    ("UNIQUE", "MINOR"):    "{label_ko} 역량을 보완하면 좋습니다",
-    ("COMMON", "MAJOR"):    "{label_ko} 등 범용 역량 보강이 권장됩니다",
-    ("COMMON", "MINOR"):    "{label_ko} 영역을 보완하면 좋습니다",
+GAP_SEVERITY_LABELS = {
+    "CRITICAL": "핵심 결핍",
+    "HIGH": "우선 보강",
+    "MEDIUM": "계획 보강",
+    "LOW": "추가 보완",
 }
-
-GAP_DETAIL_TEMPLATES = {
-    "CRITICAL": "{label_ko}은(는) {primary_profile_label_ko} 직무의 핵심 요건이나, 현재 경력에서 관련 경험이 확인되지 않습니다. 즉각적인 역량 확보가 필요합니다.",
-    "MAJOR":    "{label_ko} 경험이 부족하여 직무 수행에 어려움이 예상됩니다. 우선순위를 두고 보완을 시작하세요.",
-    "MINOR":    "{label_ko} 역량이 다소 부족하나, 단기 학습으로 보완 가능한 수준입니다.",
-}
-
-# COMMON + CRITICAL 조합은 발생하지 않음
-# (is_core_overrides는 06_SCORING_RULES.md §2.1에 따라 UNIQUE 스킬에만 적용됨)
 ```
+
+| 필드 | 텍스트 사용 |
+|------|-------------|
+| `severity` | `CRITICAL \| HIGH \| MEDIUM \| LOW` 표시 및 추천 우선순위 입력 |
+| `reason` | gap 카드/본문의 기본 설명. 엔진이 생성한 원문을 유지 |
+| `recommendation_hint` | 추천 엔진의 입력 hint. 완성 recommendation 문장으로 간주하지 않음 |
+| `gap_score` | 결핍 강도와 예상 개선폭 산정 입력 |
+| `rank`, `skill_key`, `label_ko` | key_gaps, recommendation, roadmap 연결 기준 |
 
 ---
 
 ## 7. 추천 문장 (`recommendations`)
+
+Day 12 recommendation schema 초안은 gap을 source로 하는 독립 섹션이다.
+`gaps[].recommendation_hint`는 추천의 재료이며, 최종 추천 문장은 아래 구조에서 생성한다.
+
+```json
+{
+  "recommendation_id": "rec_001",
+  "source_gap_skill_key": "labor_law",
+  "title": "노동법 실무 적용 경험 보강",
+  "detail": "노동법 관련 프로젝트 또는 자격 취득을 통해 핵심 결핍을 보완합니다.",
+  "priority": "HIGH",
+  "difficulty": "MEDIUM",
+  "expected_score_gain": 4.2,
+  "time_estimate": "4-6 weeks"
+}
+```
+
+| 필드 | 생성 규칙 |
+|------|-----------|
+| `recommendation_id` | deterministic id. 예: `rec_001` |
+| `source_gap_skill_key` | 연결된 `gaps[].skill_key` |
+| `priority` | `severity`와 `rank` 기준 (`CRITICAL/HIGH` 우선) |
+| `difficulty` | skill별 action template에서 결정. 없으면 `MEDIUM` |
+| `expected_score_gain` | `gap_score`와 requirement weight 기반 추정값 |
+| `time_estimate` | action template의 기본 기간 |
 
 ```python
 RECOMMENDATION_TEMPLATES = {
@@ -139,7 +182,26 @@ def select_mid_term_template(unique_score: float) -> str:
 
 ---
 
-## 8. 결론 문장 (`final_assessment`)
+## 8. 로드맵 문장 (`roadmap`)
+
+Day 12 roadmap schema 초안은 recommendation을 기간별로 묶은 단계형 구조다.
+
+```json
+{
+  "phase": "phase_1",
+  "period": "0-30 days",
+  "theme": "핵심 결핍 보완",
+  "actions": ["노동법 실무 사례 3건 정리", "관련 프로젝트 포트폴리오 초안 작성"],
+  "expected_outcome": "핵심 gap에 대한 설명 가능한 근거 확보"
+}
+```
+
+`actions[]`는 recommendation의 `detail`, `difficulty`, `time_estimate`를 사용해 생성한다.
+LOW confidence에서는 추가 입력 확보 행동을 첫 단계에 포함할 수 있다.
+
+---
+
+## 9. 결론 문장 (`final_assessment`)
 
 ```python
 CONCLUSION_TEMPLATES = {
@@ -152,7 +214,7 @@ CONCLUSION_TEMPLATES = {
 
 ---
 
-## 9. LLM 윤색 지침
+## 10. LLM 윤색 지침
 
 **허용:**
 - 문장 자연스러움 개선
@@ -164,7 +226,8 @@ CONCLUSION_TEMPLATES = {
 - 점수 수치 변경 (`total_score`, `unique_score`, `common_score` 등 모든 숫자)
 - `primary_profile`, `secondary_profiles`, `confidence_level`, `warning_message` 변경 또는 누락
 - 강점/갭 항목 추가 또는 제거
-- `skill_group`(UNIQUE/COMMON) 분류 변경
+- `skill_group`(UNIQUE/COMMON), `severity`, `match_level` 분류 변경
+- `strength_score`, `gap_score`, `evidence_ids`, `recommendation_hint` 변경
 - Evidence에 없는 경험 추가
 - `fit_level` 평가 변경
 - LOW warning 의미 약화 또는 삭제 금지
@@ -191,9 +254,9 @@ def polish_text(template_text: str) -> str:
 
 ---
 
-## 10. 알려진 문제점 (§ Limitations)
+## 11. 알려진 문제점 (§ Limitations)
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| `priority_clause`(target_priority_text에서 유래한 강점 언급)가 없는 경우에도 문장 끝에 빈 문자열이 남아 공백이 생길 수 있음 | 마이너 UX 이슈 | `.strip()` 처리로 간단히 해결 |
+| skill별 action template이 없으면 추천 문장이 일반적으로 보일 수 있음 | 추천 품질 저하 | `recommendation_hint`를 기본값으로 사용하고 template 확장 필요 |
 | LOW warning이 반복적으로 보이면 사용자 불안이 커질 수 있음 | 리포트 신뢰 저하 | 경고는 1회 명확히 표시하고, 나머지는 추가 입력 권장으로 연결 |

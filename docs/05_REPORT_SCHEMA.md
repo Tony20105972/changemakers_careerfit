@@ -483,11 +483,49 @@ gap별 후속 행동을 안내하는 짧은 템플릿 문구다.
 
 ## 10~11. `recommendations`, `roadmap`
 
-구조 변경 없음. 단, 이 섹션들이 참조하는 `skill_key`/`weight`/`is_core`는 모두 §4의
+Day 12 recommendation/roadmap 초안. 이 섹션들이 참조하는 `skill_key`/`weight`/`is_core`는 모두 §4의
 `primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
 
 `09_TEXT_TEMPLATE_RULES.md`의 템플릿에서 `{job_family_ko}` 같은 단일 라벨 변수는
 v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES.md` 참조).
+
+```json
+{
+  "recommendations": {
+    "items": [
+      {
+        "recommendation_id": "rec_001",
+        "source_gap_skill_key": "labor_law",
+        "title": "노동법 실무 적용 경험 보강",
+        "detail": "노동법 관련 프로젝트 또는 자격 취득을 통해 핵심 결핍을 보완합니다.",
+        "priority": "HIGH",
+        "difficulty": "MEDIUM",
+        "expected_score_gain": 4.2,
+        "time_estimate": "4-6 weeks"
+      }
+    ]
+  },
+  "roadmap": {
+    "phases": [
+      {
+        "phase": "phase_1",
+        "period": "0-30 days",
+        "theme": "핵심 결핍 보완",
+        "actions": ["노동법 실무 사례 3건 정리"],
+        "expected_outcome": "핵심 gap에 대한 설명 가능한 근거 확보"
+      }
+    ]
+  }
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `recommendations.items[].recommendation_id` | string | deterministic id |
+| `recommendations.items[].source_gap_skill_key` | string | 연결된 `gaps[].skill_key` |
+| `recommendations.items[].expected_score_gain` | number | `gap_score`/requirement weight 기반 예상 개선폭 |
+| `roadmap.phases[].actions` | array<string> | recommendation 기반 단계별 행동 |
+| `roadmap.phases[].expected_outcome` | string | 단계 완료 시 기대 결과 |
 
 ---
 

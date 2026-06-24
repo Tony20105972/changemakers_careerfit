@@ -213,14 +213,41 @@
   },
   "gaps": [
     {
-      "requirement_key": "labor_law",
-      "skill_group": "UNIQUE",
-      "gap_severity": "MAJOR",
-      "gap_reason": "노동법 관련 직접 경험이나 언급이 없음",
-      "recommendation": "노동법 자격증 취득 또는 관련 프로젝트 경험 추가",
-      "priority_order": 1
+      "rank": 1,
+      "skill_key": "labor_law",
+      "label_ko": "노동법",
+      "severity": "CRITICAL",
+      "match_level": "NONE",
+      "gap_score": 0.65,
+      "reason": "노동법 관련 경험이 확인되지 않음. 대표 근거가 없어 match_score 0.00 기준으로 결핍 판단했습니다.",
+      "recommendation_hint": "노동법 관련 프로젝트 또는 자격 취득 검토 권장"
     }
   ],
+  "recommendations": {
+    "items": [
+      {
+        "recommendation_id": "rec_001",
+        "source_gap_skill_key": "labor_law",
+        "title": "노동법 실무 적용 경험 보강",
+        "detail": "노동법 관련 프로젝트 또는 자격 취득을 통해 핵심 결핍을 보완합니다.",
+        "priority": "HIGH",
+        "difficulty": "MEDIUM",
+        "expected_score_gain": 4.2,
+        "time_estimate": "4-6 weeks"
+      }
+    ]
+  },
+  "roadmap": {
+    "phases": [
+      {
+        "phase": "phase_1",
+        "period": "0-30 days",
+        "theme": "핵심 결핍 보완",
+        "actions": ["노동법 실무 사례 3건 정리"],
+        "expected_outcome": "핵심 gap에 대한 설명 가능한 근거 확보"
+      }
+    ]
+  },
   "report_json": { /* 05_REPORT_SCHEMA.md 전체 구조 */ }
 }
 ```
@@ -237,6 +264,32 @@
 | `warning_message` | string \| null | LOW에서는 필수. 반드시 "입력 정보가 부족하여 일부 결과는 추정에 기반합니다" 문구 포함 |
 | `selected_requirements` | array | `primary_profile`의 65/35 requirement. `requirement_matches`, `score_breakdown` 계산의 기준 |
 | `confidence_total` (기존 유지) | number | `requirement_matches[]`의 동일 skill_key에 매핑된 모든 evidence의 confidence_score 합 |
+| `gaps` | array | v1.5 gap schema. `rank`, `skill_key`, `label_ko`, `severity`, `match_level`, `gap_score`, `reason`, `recommendation_hint` 포함 |
+| `recommendations` | object | Day 12 초안. `items[]`에 gap 기반 action 목록 포함 |
+| `roadmap` | object | Day 12 초안. `phases[]`에 recommendation 기반 실행 계획 포함 |
+
+**Recommendation schema 초안**
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `recommendation_id` | string | deterministic id. 예: `rec_001` |
+| `source_gap_skill_key` | string | 연결된 `gaps[].skill_key` |
+| `title` | string | 사용자-facing 추천 제목 |
+| `detail` | string | 구체 행동 설명 |
+| `priority` | enum | `CRITICAL \| HIGH \| MEDIUM \| LOW` 또는 추천 표시 우선순위 |
+| `difficulty` | enum | `LOW \| MEDIUM \| HIGH` |
+| `expected_score_gain` | number | gap_score/requirement weight 기반 예상 개선폭 |
+| `time_estimate` | string | 실행 예상 기간 |
+
+**Roadmap schema 초안**
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `phase` | string | 단계 id. 예: `phase_1` |
+| `period` | string | 실행 기간. 예: `0-30 days` |
+| `theme` | string | 단계의 핵심 주제 |
+| `actions` | array<string> | 해당 기간에 수행할 행동 목록 |
+| `expected_outcome` | string | 단계 완료 시 기대 결과 |
 
 > `profile_blend`, `blended_requirements`, `blend_display_mode`, `blend_description`은 V1 사용자-facing 계약에서 제거된다.  
 > 디버깅이 필요하면 `report_json.internal_debug.profile_blend`처럼 optional 내부 필드로만 허용한다.

@@ -15,7 +15,7 @@ SKILL_TYPE_WEIGHT = {
     "UNIQUE": 0.65,
     "COMMON": 0.35,
 }
-STRENGTH_LEVELS = {"FULL", "STRONG", "PARTIAL"}
+STRENGTH_LEVELS = {"FULL", "STRONG"}
 HEADLINE_LEVEL_KO = {
     "FULL": "명확히",
     "STRONG": "충분히",
@@ -25,11 +25,21 @@ HEADLINE_LEVEL_KO = {
 }
 HIGH_MEDIUM_LIMIT = 5
 LOW_LIMIT = 3
-PARTIAL_STRENGTH_THRESHOLD = 0.4
+LOW_STRENGTH_PRIORITY = {
+    "documentation": 0,
+    "communication": 1,
+    "coordination": 2,
+    "vendor_coordination": 3,
+    "operations_management": 4,
+    "process_improvement": 5,
+    "process_design": 8,
+    "quality_control": 9,
+}
+LOW_STRENGTH_PRIORITY_LIMIT = 5
 
 
 def filter_strength_candidates(matches: list[dict]) -> list[dict]:
-    """FULL, STRONG, PARTIAL match만 strength 후보로 통과시킨다."""
+    """FULL, STRONG match만 strength 후보로 통과시킨다."""
     candidates = []
     for match in matches or []:
         if _match_level(match) in STRENGTH_LEVELS:
@@ -62,14 +72,10 @@ def deduplicate_by_skill_key(candidates: list[dict]) -> list[dict]:
 
 
 def rank_strengths(candidates: list[dict]) -> list[dict]:
-    """UNIQUE 우선, strength_score 내림차순, skill_key 오름차순으로 정렬한다."""
+    """match/evidence 품질 우선, UNIQUE 보조 우선순위, skill_key 순으로 정렬한다."""
     ranked = sorted(
         candidates or [],
-        key=lambda item: (
-            0 if _skill_type(item) == "UNIQUE" else 1,
-            -float(item.get("strength_score", compute_strength_score(item))),
-            _skill_key(item),
-        ),
+        key=_strength_rank_key,
     )
     return [dict(item) for item in ranked]
 
@@ -78,7 +84,9 @@ def build_strength_headline(match: dict, taxonomy: dict) -> str:
     """label_ko와 match_level을 사용해 template headline을 생성한다."""
     label = _label_ko(match, taxonomy)
     level_ko = HEADLINE_LEVEL_KO.get(_match_level(match), "부분적으로")
-    return f"{label} 역량이 {level_ko} 확인됨"
+    context = "핵심 직무 역량" if _skill_type(match) == "UNIQUE" else "협업 기반 역량"
+    evidence_note = _headline_evidence_note(match)
+    return f"{label} 역량은 {context}으로 {level_ko} 확인됨{evidence_note}"
 
 
 def select_strengths(
@@ -89,17 +97,16 @@ def select_strengths(
 ) -> list[dict]:
     """strength 후보 필터링, 점수화, 정렬, fallback을 수행해 strengths[]를 반환한다."""
     candidates = filter_strength_candidates(matches)
-    candidates = [_with_strength_score(candidate) for candidate in candidates]
-    candidates = _resolve_partial_overlap(candidates, confidence_level)
+    candidates = [_with_strength_evidence(candidate, evidence) for candidate in candidates]
     candidates = deduplicate_by_skill_key(candidates)
-    candidates = rank_strengths(candidates)
+    candidates = _rank_for_confidence(candidates, confidence_level)
     if not candidates:
-        candidates = _fallback_strength_candidates(matches)
+        candidates = _fallback_strength_candidates(matches, evidence, confidence_level)
 
     limit = LOW_LIMIT if str(confidence_level).upper() == "LOW" else HIGH_MEDIUM_LIMIT
     selected = candidates[:limit]
     if str(confidence_level).upper() == "LOW" and not selected:
-        selected = _fallback_strength_candidates(matches)[:1]
+        selected = _fallback_strength_candidates(matches, evidence, confidence_level)[:1]
     return [_build_strength(item, evidence, taxonomy, rank) for rank, item in enumerate(selected, start=1)]
 
 
@@ -109,34 +116,29 @@ def _with_strength_score(match: dict) -> dict:
     return normalized
 
 
-def _resolve_partial_overlap(candidates: list[dict], confidence_level: str) -> list[dict]:
-    resolved = []
-    for candidate in candidates:
-        if _match_level(candidate) != "PARTIAL":
-            resolved.append(candidate)
-            continue
-        if float(candidate.get("strength_score", 0.0)) >= PARTIAL_STRENGTH_THRESHOLD:
-            resolved.append(candidate)
-    if resolved or str(confidence_level).upper() != "LOW":
-        return resolved
-    return list(candidates)
+def _with_strength_evidence(match: dict, evidence: list[dict]) -> dict:
+    normalized = _with_strength_score(match)
+    stats = _evidence_stats(_skill_key(match), evidence)
+    normalized.update(stats)
+    return normalized
 
 
-def _fallback_strength_candidates(matches: list[dict]) -> list[dict]:
-    partials = []
-    weaks = []
+def _fallback_strength_candidates(matches: list[dict], evidence: list[dict], confidence_level: str) -> list[dict]:
+    fallback = []
     for match in matches or []:
-        normalized = _with_strength_score(match)
-        level = _match_level(normalized)
-        if level == "PARTIAL":
-            partials.append(normalized)
-        elif level == "WEAK":
-            normalized["headline_suffix"] = "(추정)"
-            weaks.append(normalized)
-    fallback_pool = partials if partials else weaks
+        allowed_levels = {"STRONG"}
+        if str(confidence_level).upper() == "LOW":
+            allowed_levels = {"STRONG", "PARTIAL", "WEAK"}
+        if _match_level(match) not in allowed_levels:
+            continue
+        normalized = _with_strength_evidence(match, evidence)
+        normalized["headline_suffix"] = "(추정)"
+        if str(confidence_level).upper() == "LOW" and _low_strength_priority(normalized) > LOW_STRENGTH_PRIORITY_LIMIT:
+            continue
+        fallback.append(normalized)
     return sorted(
-        fallback_pool,
-        key=lambda item: (-float(item.get("match_score", 0.0)), _skill_key(item)),
+        fallback,
+        key=lambda item: (_low_strength_priority(item), _strength_rank_key(item)),
     )[:1]
 
 
@@ -165,7 +167,7 @@ def _evidence_ids_for_match(match: dict, evidence: list[dict]) -> list[str]:
             valid_ids[str(evidence_id)] = item
     ids = []
     matched_id = match.get("matched_evidence_id")
-    if matched_id and str(matched_id) in valid_ids:
+    if matched_id and str(matched_id) in valid_ids and valid_ids[str(matched_id)].get("skill_key") == skill_key:
         ids.append(str(matched_id))
     for evidence_id, item in valid_ids.items():
         if item.get("skill_key") == skill_key:
@@ -173,16 +175,74 @@ def _evidence_ids_for_match(match: dict, evidence: list[dict]) -> list[str]:
     return sorted({evidence_id for evidence_id in ids if evidence_id in valid_ids})
 
 
-def _strength_dedupe_key(match: dict) -> tuple:
+def _evidence_stats(skill_key: str, evidence: list[dict]) -> dict:
+    items = [item for item in evidence or [] if item.get("skill_key") == skill_key]
+    type_counts = {"EXPLICIT": 0, "ACHIEVED": 0, "INFERRED": 0}
+    confidence_total = 0.0
+    for item in items:
+        evidence_type = str(item.get("evidence_type") or "").upper()
+        if evidence_type in type_counts:
+            type_counts[evidence_type] += 1
+        confidence_total += float(item.get("confidence_score", 0.0))
+    return {
+        "evidence_count": len(items),
+        "confidence_total": round(confidence_total, 4),
+        "explicit_count": type_counts["EXPLICIT"],
+        "achieved_count": type_counts["ACHIEVED"],
+        "inferred_count": type_counts["INFERRED"],
+    }
+
+
+def _strength_rank_key(match: dict) -> tuple:
     return (
+        -_match_level_value(_match_level(match)),
+        -int(match.get("explicit_count", 0)),
+        -int(match.get("achieved_count", 0)),
+        -float(match.get("confidence_total", 0.0)),
+        -int(match.get("evidence_count", 0)),
+        0 if _skill_type(match) == "UNIQUE" else 1,
         -float(match.get("strength_score", compute_strength_score(match))),
-        _match_level_rank(_match_level(match)),
         _skill_key(match),
     )
 
 
-def _match_level_rank(level: str) -> int:
-    return {"FULL": 0, "STRONG": 1, "PARTIAL": 2, "WEAK": 3, "NONE": 4}.get(level, 5)
+def _rank_for_confidence(candidates: list[dict], confidence_level: str) -> list[dict]:
+    if str(confidence_level).upper() != "LOW":
+        return rank_strengths(candidates)
+    candidates = [
+        item
+        for item in candidates or []
+        if _low_strength_priority(item) <= LOW_STRENGTH_PRIORITY_LIMIT
+    ]
+    return sorted(candidates or [], key=lambda item: (_low_strength_priority(item), _strength_rank_key(item)))
+
+
+def _low_strength_priority(match: dict) -> int:
+    return LOW_STRENGTH_PRIORITY.get(_skill_key(match), 8)
+
+
+def _strength_dedupe_key(match: dict) -> tuple:
+    return (
+        _strength_rank_key(match),
+        _skill_key(match),
+    )
+
+
+def _match_level_value(level: str) -> int:
+    return {"FULL": 4, "STRONG": 3, "PARTIAL": 2, "WEAK": 1, "NONE": 0}.get(level, 0)
+
+
+def _headline_evidence_note(match: dict) -> str:
+    explicit = int(match.get("explicit_count", 0))
+    achieved = int(match.get("achieved_count", 0))
+    evidence_count = int(match.get("evidence_count", 0))
+    if explicit:
+        return f" (명시 근거 {explicit}건)"
+    if achieved:
+        return f" (성과 근거 {achieved}건)"
+    if evidence_count:
+        return f" (간접 근거 {evidence_count}건)"
+    return ""
 
 
 def _taxonomy_lookup(taxonomy: dict) -> dict:

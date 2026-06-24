@@ -9,8 +9,6 @@ GAP_LEVEL_FACTOR = {
     "NONE": 1.0,
     "WEAK": 0.75,
     "PARTIAL": 0.5,
-    "STRONG": 0.25,
-    "FULL": 0.0,
 }
 SKILL_TYPE_WEIGHT = {
     "UNIQUE": 0.65,
@@ -31,8 +29,6 @@ REASON_LEVEL_KO = {
 }
 HIGH_MEDIUM_LIMIT = 4
 LOW_LIMIT = 2
-PARTIAL_STRENGTH_THRESHOLD = 0.4
-MIN_NON_LOW_GAPS = 2
 
 
 def filter_gap_candidates(matches: list[dict]) -> list[dict]:
@@ -73,7 +69,8 @@ def build_gap_reason(match: dict, taxonomy: dict) -> str:
     """label_ko와 match_level을 사용해 template reason을 생성한다."""
     label = _label_ko(match, {}, taxonomy)
     level_ko = REASON_LEVEL_KO.get(_match_level(match), "부분적으로 부족함")
-    return f"{label} 관련 경험이 {level_ko}"
+    evidence_note = _gap_evidence_note(match)
+    return f"{label} 관련 경험이 {level_ko}. {evidence_note}"
 
 
 def build_recommendation_hint(match: dict, taxonomy: dict) -> str:
@@ -83,14 +80,10 @@ def build_recommendation_hint(match: dict, taxonomy: dict) -> str:
 
 
 def rank_gaps(candidates: list[dict]) -> list[dict]:
-    """severity 우선, gap_score 내림차순, skill_key 오름차순으로 정렬한다."""
+    """core/UNIQUE 결핍 우선, severity와 gap_score, skill_key 순으로 정렬한다."""
     ranked = sorted(
         candidates or [],
-        key=lambda item: (
-            -SEVERITY_PRIORITY.get(str(item.get("severity") or "LOW"), 0),
-            -float(item.get("gap_score", compute_gap_score(item))),
-            _skill_key(item),
-        ),
+        key=_gap_rank_key,
     )
     return [dict(item) for item in ranked]
 
@@ -106,27 +99,18 @@ def analyze_gaps(
     for match in filter_gap_candidates(matches):
         requirement = _find_requirement(match, requirements)
         normalized = _merge_match_requirement(match, requirement)
+        normalized["requirement_order"] = _requirement_order(normalized, requirements)
         normalized["severity"] = classify_severity(normalized, requirements)
         normalized["gap_score"] = compute_gap_score(normalized)
-        if _is_strength_side_partial(normalized):
-            continue
         candidates.append(normalized)
 
     candidates = _deduplicate_by_skill_key(candidates)
-    candidates = _supplement_soft_gaps(candidates, matches, requirements, confidence_level)
-    selected = rank_gaps(candidates)
+    selected = _rank_for_confidence(candidates, confidence_level)
     limit = LOW_LIMIT if str(confidence_level).upper() == "LOW" else HIGH_MEDIUM_LIMIT
     selected = selected[:limit]
     if str(confidence_level).upper() == "LOW" and not selected:
         selected = _fallback_gap_candidates(matches, requirements)[:1]
     return [_build_gap(item, taxonomy, rank) for rank, item in enumerate(selected, start=1)]
-
-
-def _is_strength_side_partial(match: dict) -> bool:
-    if _match_level(match) != "PARTIAL":
-        return False
-    strength_score = SKILL_TYPE_WEIGHT.get(_skill_type(match, {}), SKILL_TYPE_WEIGHT["COMMON"]) * 0.5
-    return round(strength_score, 4) >= PARTIAL_STRENGTH_THRESHOLD
 
 
 def _deduplicate_by_skill_key(candidates: list[dict]) -> list[dict]:
@@ -148,32 +132,11 @@ def _fallback_gap_candidates(matches: list[dict], requirements: list[dict]) -> l
             continue
         requirement = _find_requirement(match, requirements)
         normalized = _merge_match_requirement(match, requirement)
+        normalized["requirement_order"] = _requirement_order(normalized, requirements)
         normalized["severity"] = classify_severity(normalized, requirements)
         normalized["gap_score"] = compute_gap_score(normalized)
         fallback_pool.append(normalized)
     return rank_gaps(fallback_pool)
-
-
-def _supplement_soft_gaps(
-    candidates: list[dict],
-    matches: list[dict],
-    requirements: list[dict],
-    confidence_level: str,
-) -> list[dict]:
-    if str(confidence_level).upper() == "LOW" or len(candidates) == 0 or len(candidates) >= MIN_NON_LOW_GAPS:
-        return candidates
-    used = {_skill_key(item) for item in candidates}
-    supplements = []
-    for match in matches or []:
-        if _skill_key(match) in used or _match_level(match) != "STRONG":
-            continue
-        requirement = _find_requirement(match, requirements)
-        normalized = _merge_match_requirement(match, requirement)
-        normalized["severity"] = "LOW"
-        normalized["gap_score"] = compute_gap_score(normalized)
-        supplements.append(normalized)
-    needed = MIN_NON_LOW_GAPS - len(candidates)
-    return candidates + rank_gaps(supplements)[:needed]
 
 
 def _build_gap(match: dict, taxonomy: dict, rank: int) -> dict:
@@ -212,12 +175,55 @@ def _find_requirement(match: dict, requirements: list[dict]) -> dict:
     return {}
 
 
+def _requirement_order(match: dict, requirements: list[dict]) -> int:
+    requirement_id = match.get("requirement_id")
+    skill_key = _skill_key(match)
+    for index, requirement in enumerate(requirements or []):
+        if requirement_id and requirement.get("requirement_id") == requirement_id:
+            return index
+        if _skill_key(requirement) == skill_key:
+            return index
+    return 999
+
+
 def _gap_dedupe_key(match: dict) -> tuple:
+    return _gap_rank_key(match)
+
+
+def _gap_rank_key(match: dict) -> tuple:
     return (
+        0 if bool(match.get("is_core", False)) else 1,
+        0 if _skill_type(match, {}) == "UNIQUE" else 1,
         -SEVERITY_PRIORITY.get(str(match.get("severity") or "LOW"), 0),
         -float(match.get("gap_score", compute_gap_score(match))),
+        _match_level_rank(_match_level(match)),
+        int(match.get("requirement_order", 999)),
         _skill_key(match),
     )
+
+
+def _rank_for_confidence(candidates: list[dict], confidence_level: str) -> list[dict]:
+    if str(confidence_level).upper() != "LOW":
+        return rank_gaps(candidates)
+    return sorted(
+        candidates or [],
+        key=lambda item: (
+            int(item.get("requirement_order", 999)),
+            _gap_rank_key(item),
+        ),
+    )
+
+
+def _match_level_rank(level: str) -> int:
+    return {"NONE": 0, "WEAK": 1, "PARTIAL": 2}.get(level, 9)
+
+
+def _gap_evidence_note(match: dict) -> str:
+    matched_id = match.get("matched_evidence_id")
+    match_score = float(match.get("match_score", 0.0))
+    if matched_id:
+        return f"대표 근거 {matched_id}, match_score {match_score:.2f} 기준입니다."
+    return f"대표 근거가 없어 match_score {match_score:.2f} 기준으로 결핍 판단했습니다."
 
 
 def _taxonomy_lookup(taxonomy: dict) -> dict:

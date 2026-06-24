@@ -121,7 +121,7 @@ Executive Summary. 리포트 전체에서 가장 먼저 노출되는 핵심 요�
 | `common_score` | number | COMMON 스킬군(primary_profile 범용 역량) 합산 점수, 최대 35.0 |
 | `common_score_max` | number | 항상 35.0 |
 | `key_strengths` | array<string> | skill_key 상위 3개 (rank 기준) |
-| `key_gaps` | array<string> | skill_key 상위 2개 (priority_order 기준) |
+| `key_gaps` | array<string> | skill_key 상위 2개 (`gaps[].rank` 기준) |
 
 **fit_level 기준:**
 
@@ -384,13 +384,120 @@ Executive Summary. 리포트 전체에서 가장 먼저 노출되는 핵심 요�
 
 ---
 
-## 8~11. `strengths`, `gaps`, `recommendations`, `roadmap`
+## 8. `strengths`
 
-**구조 변경 없음** (v2와 동일). 단, 이 섹션들이 참조하는 `skill_key`/`weight`/`is_core`는  
-모두 §4의 `primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
+대표 프로필 기준으로 확인된 강점 목록. 모든 항목은 Evidence와 requirement match 결과에서
+결정론적으로 생성된다.
 
-`09_TEXT_TEMPLATE_RULES.md`의 템플릿에서 `{job_family_ko}` 같은 단일 라벨 변수는  
+```json
+{
+  "strengths": [
+    {
+      "rank": 1,
+      "skill_key": "recruiting",
+      "label_ko": "채용 관리",
+      "match_level": "FULL",
+      "strength_score": 0.65,
+      "headline": "채용 관리 역량은 핵심 직무 역량으로 명확히 확인됨 (명시 근거 1건)",
+      "evidence_ids": ["ev_003", "ev_019"]
+    }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `rank` | integer | 강점 표시 순서. 1부터 시작 |
+| `skill_key` | string | primary_profile requirement의 skill_key |
+| `label_ko` | string | 사용자 표시용 스킬명 |
+| `match_level` | enum | `FULL \| STRONG \| PARTIAL \| WEAK \| NONE`; 일반 강점 후보는 `FULL \| STRONG` |
+| `strength_score` | number | `match_level factor × skill_type weight`; UNIQUE=0.65, COMMON=0.35 기준 |
+| `headline` | string | 스킬, 직무 맥락, 근거 유형을 포함한 템플릿 문장 |
+| `evidence_ids` | array<string> | 해당 skill_key에 연결된 Evidence ID 목록. 존재하는 Evidence만 참조하며 정렬된 배열 |
+
+**Strength 선정/정렬 규칙**
+
+1. 기본 후보는 `match_level in {FULL, STRONG}`이다. LOW confidence fallback에서만 제한적으로 `PARTIAL/WEAK` 추정 강점이 허용된다.
+2. 정렬은 `match_level` 품질(`FULL > STRONG > PARTIAL > WEAK`)을 먼저 본다.
+3. 그 다음 `EXPLICIT evidence_count`, `ACHIEVED evidence_count`, `confidence_total`, 전체 `evidence_count`를 반영한다.
+4. 이후 UNIQUE requirement를 COMMON보다 우선하고, 마지막 tie-break는 `skill_key` 알파벳순이다.
+5. LOW confidence에서는 문서화, 커뮤니케이션, 조율 등 기초 운영/협업 계열을 우선한다.
+
+**PDF 렌더링 위치:** Section 8 (Strength Analysis) — rank, headline, evidence reference, skill label 표시
+
+---
+
+## 9. `gaps`
+
+대표 프로필 기준으로 보강이 필요한 gap 목록. `recommendation_hint`는 추천 엔진 결과가 아니라
+gap별 후속 행동을 안내하는 짧은 템플릿 문구다.
+
+```json
+{
+  "gaps": [
+    {
+      "rank": 1,
+      "skill_key": "labor_law",
+      "label_ko": "노동법",
+      "severity": "CRITICAL",
+      "match_level": "NONE",
+      "gap_score": 0.65,
+      "reason": "노동법 관련 경험이 확인되지 않음. 대표 근거가 없어 match_score 0.00 기준으로 결핍 판단했습니다.",
+      "recommendation_hint": "노동법 관련 프로젝트 또는 자격 취득 검토 권장"
+    }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `rank` | integer | gap 표시 순서. 1부터 시작 |
+| `skill_key` | string | primary_profile requirement의 skill_key |
+| `label_ko` | string | 사용자 표시용 스킬명 |
+| `severity` | enum | `CRITICAL \| HIGH \| MEDIUM \| LOW` |
+| `match_level` | enum | gap 판단에 사용된 match level. 후보는 `NONE \| WEAK \| PARTIAL` |
+| `gap_score` | number | 결여도 factor(`NONE=1.0`, `WEAK=0.75`, `PARTIAL=0.5`) × skill_type weight |
+| `reason` | string | match_level, 대표 evidence 여부, match_score를 포함한 템플릿 기반 설명 |
+| `recommendation_hint` | string | 해당 skill 보강을 위한 프로젝트/자격 검토 안내 문구 |
+
+**Gap 후보/정렬 규칙**
+
+1. gap 후보는 `match_level in {NONE, WEAK, PARTIAL}`만 허용한다.
+2. `STRONG`과 `FULL`은 gap 후보에서 제외한다.
+3. 정렬은 core requirement 우선, UNIQUE 우선, `severity`, `gap_score`, requirement 순서, `skill_key` 순으로 결정한다.
+4. `is_core=true`이고 `NONE/WEAK`이면 `CRITICAL`이다. `is_core`가 없으면 false로 간주한다.
+5. LOW confidence에서도 gap은 생성 가능하지만 `meta.warning_message`와 함께 해석해야 한다.
+
+**Severity enum**
+
+| severity | 의미 |
+|----------|------|
+| `CRITICAL` | core requirement가 `NONE/WEAK`인 핵심 결핍 |
+| `HIGH` | UNIQUE requirement가 `NONE/WEAK`인 결핍 |
+| `MEDIUM` | UNIQUE `PARTIAL` 또는 COMMON `NONE/WEAK` |
+| `LOW` | COMMON `PARTIAL` 등 낮은 우선순위 보강 항목 |
+
+**PDF 렌더링 위치:** Section 9 (Gap Analysis) — rank, severity, reason, recommendation_hint 표시
+
+---
+
+## 10~11. `recommendations`, `roadmap`
+
+구조 변경 없음. 단, 이 섹션들이 참조하는 `skill_key`/`weight`/`is_core`는 모두 §4의
+`primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
+
+`09_TEXT_TEMPLATE_RULES.md`의 템플릿에서 `{job_family_ko}` 같은 단일 라벨 변수는
 v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES.md` 참조).
+
+---
+
+## 11.1 Strength/Gap 공통 불변 규칙
+
+1. 동일한 `skill_key`는 `strengths[]`와 `gaps[]`에 동시에 존재할 수 없다.
+2. 두 배열 모두 deterministic sorting을 사용하며, 동일 입력은 동일 순서를 반환해야 한다.
+3. LOW confidence 리포트도 `strengths[]`와 `gaps[]`를 생성할 수 있다.
+4. LOW confidence 결과는 반드시 `meta.warning_message`와 함께 사용자에게 표시해야 한다.
+5. 모든 Evidence 참조 ID는 `evidenceMapping[]` 또는 엔진 Evidence 목록에 실제 존재해야 한다.
 
 **PDF 렌더링 위치:** Section 8~11 (변경 없음)
 

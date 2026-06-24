@@ -315,33 +315,45 @@ def calculate_final_scores(unique_raw: float, common_total: float, penalty: floa
 
 ---
 
-## 8. Gap Severity 분류 (변경 없음, selected_requirements 기준으로 적용)
+## 8. Gap 분석 규칙 (selected_requirements 기준)
 
 ```python
 def classify_gap_severity(req: Requirement, match: RequirementMatch) -> GapSeverity:
     if req.is_core and match.match_level in (MatchLevel.NONE, MatchLevel.WEAK):
         return GapSeverity.CRITICAL
-    if req.weight >= 0.10 and match.match_level in (
-        MatchLevel.NONE, MatchLevel.WEAK, MatchLevel.PARTIAL
-    ):
-        return GapSeverity.MAJOR
-    if match.match_level in (MatchLevel.NONE, MatchLevel.WEAK, MatchLevel.PARTIAL):
-        return GapSeverity.MINOR
-    return None
+    if req.skill_group == "UNIQUE" and match.match_level in (MatchLevel.NONE, MatchLevel.WEAK):
+        return GapSeverity.HIGH
+    if req.skill_group == "UNIQUE" and match.match_level == MatchLevel.PARTIAL:
+        return GapSeverity.MEDIUM
+    if req.skill_group == "COMMON" and match.match_level in (MatchLevel.NONE, MatchLevel.WEAK):
+        return GapSeverity.MEDIUM
+    return GapSeverity.LOW
 ```
 
 ```python
-def assign_priority_order(gaps: list[Gap]) -> list[Gap]:
-    severity_rank = {"CRITICAL": 0, "MAJOR": 1, "MINOR": 2}
-    sorted_gaps = sorted(gaps, key=lambda g: (severity_rank[g.gap_severity], -g.weight))
-    for i, gap in enumerate(sorted_gaps, start=1):
-        gap.priority_order = i
-    return sorted_gaps
+def select_gap_candidates(matches: list[RequirementMatch]) -> list[RequirementMatch]:
+    return [m for m in matches if m.match_level in (MatchLevel.NONE, MatchLevel.WEAK, MatchLevel.PARTIAL)]
 ```
+
+Gap 후보에서 `STRONG`과 `FULL`은 제외한다. gap_score는 결여도 factor와 skill_group weight의 곱이다.
+
+| match_level | 결여도 factor |
+|-------------|---------------|
+| `NONE` | 1.00 |
+| `WEAK` | 0.75 |
+| `PARTIAL` | 0.50 |
+
+정렬 우선순위:
+1. `is_core=true` requirement 우선
+2. UNIQUE requirement 우선
+3. severity (`CRITICAL > HIGH > MEDIUM > LOW`)
+4. `gap_score` 내림차순
+5. requirement registry 순서
+6. `skill_key` 알파벳순
 
 ---
 
-## 9. Strength 선정 규칙 (변경 없음, selected_requirements 기준)
+## 9. Strength 선정 규칙 (selected_requirements 기준)
 
 ```python
 def select_strengths(matches: list[RequirementMatch], requirements: list[Requirement]) -> list[Strength]:
@@ -352,13 +364,52 @@ def select_strengths(matches: list[RequirementMatch], requirements: list[Require
 
     def sort_key(item):
         req, m = item
-        weighted_score = req.weight * MATCH_SCORE[m.match_level] * 100
+        evidence = evidence_stats[m.requirement_key]
         unique_priority = 0 if req.skill_group == "UNIQUE" else 1
-        return (-weighted_score, unique_priority)
+        return (
+            -match_level_rank[m.match_level],
+            -evidence.explicit_count,
+            -evidence.achieved_count,
+            -evidence.confidence_total,
+            -evidence.evidence_count,
+            unique_priority,
+            req.requirement_key,
+        )
 
     candidates.sort(key=sort_key)
-    return candidates[:3]
+    return candidates[:5]
 ```
+
+일반 strength 후보는 `FULL`과 `STRONG`이다. LOW confidence fallback에서는 리포트 완성도를 위해
+기초 운영/협업 계열에 한해 `PARTIAL/WEAK` 추정 강점이 생성될 수 있으며, 이 경우 headline에 추정 문맥을 표시한다.
+
+strength_score는 `match_level factor × skill_group weight`로 계산한다.
+
+| match_level | factor |
+|-------------|--------|
+| `FULL` | 1.00 |
+| `STRONG` | 0.75 |
+| `PARTIAL` | 0.50 |
+| `WEAK` | 0.25 |
+| `NONE` | 0.00 |
+
+정렬 우선순위:
+1. match_level 품질 (`FULL > STRONG > PARTIAL > WEAK`)
+2. EXPLICIT evidence 개수
+3. ACHIEVED evidence 개수
+4. confidence_total
+5. evidence_count
+6. UNIQUE requirement 우선
+7. strength_score
+8. `skill_key` 알파벳순
+
+---
+
+## 9.1 Strength/Gap Mutual Exclusion
+
+동일한 `skill_key`는 `strengths[]`와 `gaps[]`에 동시에 포함될 수 없다.
+후보 경계에 있는 항목은 strength와 gap 중 하나로만 선택해야 하며, 최종 Report JSON 조립 단계에서도
+이 불변 조건을 검증해야 한다.
 
 ---
 
@@ -377,6 +428,8 @@ def select_strengths(matches: list[RequirementMatch], requirements: list[Require
 10. original_text는 절대 수정되지 않음
 11. primary_profile은 항상 유효한 profile_pool key
 12. confidence_level은 HIGH | MEDIUM | LOW만 허용, LOW도 report_json 생성 대상
+13. 동일 skill_key는 strengths[]와 gaps[]에 동시에 존재할 수 없음
+14. gaps[]에는 STRONG/FULL match_level이 포함될 수 없음
 ```
 
 ---

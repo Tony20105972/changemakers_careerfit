@@ -46,6 +46,10 @@ def build_report(
     final_assessment: Any,
     version: str = "1.0.0",
     generated_at: str | None = None,
+    report_id: str | None = None,
+    llm_used: bool = False,
+    weight_source: str = "MANUAL_V1",
+    evidence_count: int | None = None,
     careerProfile: Any | None = None,
     targetJobAnalysis: Any | None = None,
     skillMapping: Any | None = None,
@@ -66,6 +70,10 @@ def build_report(
             warning_message=warning_message,
             version=version,
             generated_at=generated_at,
+            report_id=report_id,
+            llm_used=llm_used,
+            weight_source=weight_source,
+            evidence_count=evidence_count,
         ),
         "summary": _json_ready(executive_summary),
         "careerProfile": _json_ready(careerProfile or {}),
@@ -96,14 +104,22 @@ def _build_meta(
     warning_message: str | None,
     version: str,
     generated_at: str | None,
+    report_id: str | None,
+    llm_used: bool,
+    weight_source: str,
+    evidence_count: int | None,
 ) -> dict[str, Any]:
     return {
+        "report_id": report_id,
+        "generated_at": generated_at,
+        "engine_version": version,
+        "llm_used": llm_used,
         "primary_profile": primary_profile,
         "secondary_profiles": _json_ready(secondary_profiles),
+        "weight_source": weight_source,
         "confidence_level": confidence_level,
+        "evidence_count": evidence_count,
         "warning_message": warning_message,
-        "version": version,
-        "generated_at": generated_at,
     }
 
 
@@ -119,9 +135,9 @@ def _build_skill_narratives(
     if not isinstance(narratives, dict):
         narratives = {}
     return {
-        **narratives,
-        "strength_narratives": _json_ready(strength_narratives),
-        "gap_narratives": _json_ready(gap_narratives),
+        "career_context": narratives.get("career_context", _json_ready(strength_narratives)),
+        "market_context": narratives.get("market_context", _json_ready(gap_narratives)),
+        "development_direction": narratives.get("development_direction", _json_ready(final_assessment)),
         "job_outlook": _json_ready(job_outlook),
         "final_assessment": _json_ready(final_assessment),
     }

@@ -1,0 +1,162 @@
+# ============================================================
+# CareerFit
+# .gitignore
+# ============================================================
+
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Pytest
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Ruff / MyPy
+.mypy_cache/
+.ruff_cache/
+
+# -----------------------------
+# IDE
+# -----------------------------
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# -----------------------------
+# Logs
+# -----------------------------
+*.log
+
+# -----------------------------
+# Environment
+# -----------------------------
+.env
+.env.*
+!.env.example
+
+# -----------------------------
+# Local Database
+# -----------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# -----------------------------
+# Generated Reports
+# -----------------------------
+output/debug_*.json
+output/debug_*.pdf
+output/temp/
+output/cache/
+
+# Keep sample reports
+!output/sample_*.json
+
+# -----------------------------
+# Generated PDFs
+# -----------------------------
+*.pdf
+
+# Keep documentation PDFs if needed
+!docs/**/*.pdf
+
+# -----------------------------
+# Coverage
+# -----------------------------
+coverage.xml
+
+# -----------------------------
+# Node / React
+# -----------------------------
+node_modules/
+.next/
+dist/
+build/
+
+# npm / pnpm / yarn
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -----------------------------
+# OS
+# -----------------------------
+Thumbs.db
+
+# -----------------------------
+# Temporary Files
+# -----------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# -----------------------------
+# Jupyter
+# -----------------------------
+.ipynb_checkpoints/
+
+# -----------------------------
+# Secrets
+# -----------------------------
+*.pem
+*.key
+*.crt
+
+# -----------------------------
+# Local Config
+# -----------------------------
+.python-version
+
+# -----------------------------
+# Generated Reports (Future)
+# -----------------------------
+reports/generated/
+reports/temp/
+
+# -----------------------------
+# Cache
+# -----------------------------
+.cache/
+
+# -----------------------------
+# FastAPI Uploads (Future)
+# -----------------------------
+uploads/
+
+# -----------------------------
+# Playwright / Browser
+# -----------------------------
+playwright-report/
+test-results/
+
+# -----------------------------
+# Chrome
+# -----------------------------
+*.crdownload
+
+# -----------------------------
+# Misc
+# -----------------------------
+*.bak
+*.orig

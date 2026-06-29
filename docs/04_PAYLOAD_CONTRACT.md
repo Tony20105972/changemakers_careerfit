@@ -223,30 +223,22 @@
       "recommendation_hint": "노동법 관련 프로젝트 또는 자격 취득 검토 권장"
     }
   ],
-  "recommendations": {
-    "items": [
-      {
-        "recommendation_id": "rec_001",
-        "source_gap_skill_key": "labor_law",
-        "title": "노동법 실무 적용 경험 보강",
-        "detail": "노동법 관련 프로젝트 또는 자격 취득을 통해 핵심 결핍을 보완합니다.",
-        "priority": "HIGH",
-        "difficulty": "MEDIUM",
-        "expected_score_gain": 4.2,
-        "time_estimate": "4-6 weeks"
-      }
-    ]
-  },
-  "roadmap": {
-    "phases": [
-      {
-        "phase": "phase_1",
-        "period": "0-30 days",
-        "theme": "핵심 결핍 보완",
-        "actions": ["노동법 실무 사례 3건 정리"],
-        "expected_outcome": "핵심 gap에 대한 설명 가능한 근거 확보"
-      }
-    ]
+  "skill_explanations": [
+    {
+      "skill_key": "labor_law",
+      "label_ko": "노동법",
+      "source": "gap",
+      "career_context": "HR 직무에서 노동법은 채용, 평가, 보상, 조직 운영 판단의 기준이 되는 핵심 역량입니다.",
+      "market_context": "인사 직무 채용 시장에서는 법적 리스크를 이해하고 실무 의사결정에 적용할 수 있는 역량을 중요하게 봅니다.",
+      "development_direction": "현재 Evidence에는 노동법 적용 경험이 확인되지 않으므로, 향후 경험 서술에서는 관련 판단 과정과 적용 사례를 보강하는 방향이 적절합니다."
+    }
+  ],
+  "skill_narratives": {
+    "career_context": "확인된 강점은 채용과 온보딩 실행 경험에 집중되어 있으며, HR 운영형 역할과 잘 맞습니다.",
+    "market_context": "시장 관점에서는 채용 운영 경험에 더해 노동법, 급여, 평가 운영처럼 리스크와 제도를 다루는 역량이 함께 요구됩니다.",
+    "development_direction": "새 Evidence를 만들거나 점수를 조정하지 않고, 현재 확인된 gap을 커리어 설명에서 보완해야 할 방향으로 해석합니다.",
+    "job_outlook": "대표 프로필인 HR 기준으로는 실무 운영 경험이 강점이며, 제도/법무 기반 역량 설명이 강화될수록 지원 가능성이 높아집니다.",
+    "final_assessment": "현재 리포트는 HR 적합성을 설명할 충분한 실무 근거를 포함하지만, 노동법과 급여 관리에 대한 설명 가능성은 보완이 필요합니다."
   },
   "report_json": { /* 05_REPORT_SCHEMA.md 전체 구조 */ }
 }
@@ -265,31 +257,39 @@
 | `selected_requirements` | array | `primary_profile`의 65/35 requirement. `requirement_matches`, `score_breakdown` 계산의 기준 |
 | `confidence_total` (기존 유지) | number | `requirement_matches[]`의 동일 skill_key에 매핑된 모든 evidence의 confidence_score 합 |
 | `gaps` | array | v1.5 gap schema. `rank`, `skill_key`, `label_ko`, `severity`, `match_level`, `gap_score`, `reason`, `recommendation_hint` 포함 |
-| `recommendations` | object | Day 12 초안. `items[]`에 gap 기반 action 목록 포함 |
-| `roadmap` | object | Day 12 초안. `phases[]`에 recommendation 기반 실행 계획 포함 |
+| `skill_explanations` | array | Day 12 Skill Intelligence Layer. Evidence/strength/gap을 바꾸지 않고 skill별 career/market/development 설명 생성 |
+| `skill_narratives` | object | Day 12 Narrative Template Layer. `career_context`, `market_context`, `development_direction`, `job_outlook`, `final_assessment` 포함 |
 
-**Recommendation schema 초안**
-
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| `recommendation_id` | string | deterministic id. 예: `rec_001` |
-| `source_gap_skill_key` | string | 연결된 `gaps[].skill_key` |
-| `title` | string | 사용자-facing 추천 제목 |
-| `detail` | string | 구체 행동 설명 |
-| `priority` | enum | `CRITICAL \| HIGH \| MEDIUM \| LOW` 또는 추천 표시 우선순위 |
-| `difficulty` | enum | `LOW \| MEDIUM \| HIGH` |
-| `expected_score_gain` | number | gap_score/requirement weight 기반 예상 개선폭 |
-| `time_estimate` | string | 실행 예상 기간 |
-
-**Roadmap schema 초안**
+**Skill explanation schema**
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `phase` | string | 단계 id. 예: `phase_1` |
-| `period` | string | 실행 기간. 예: `0-30 days` |
-| `theme` | string | 단계의 핵심 주제 |
-| `actions` | array<string> | 해당 기간에 수행할 행동 목록 |
-| `expected_outcome` | string | 단계 완료 시 기대 결과 |
+| `skill_key` | string | 연결된 `strengths[].skill_key` 또는 `gaps[].skill_key` |
+| `label_ko` | string | 사용자-facing 스킬명 |
+| `source` | enum | `strength \| gap` |
+| `career_context` | string | 사용자의 커리어 안에서 해당 스킬이 갖는 의미 |
+| `market_context` | string | 대표 프로필의 시장/직무 요구에서 해당 스킬이 갖는 의미 |
+| `development_direction` | string | 실행 계획이 아닌 설명 방향. Evidence 추가/변경 없이 보완 관점을 제시 |
+
+**Skill narrative schema**
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `career_context` | string | 전체 Evidence/strength/gap을 커리어 맥락으로 해석한 문단 |
+| `market_context` | string | `primary_profile` 요구사항 기준 시장/직무 맥락 문단 |
+| `development_direction` | string | action list가 아닌 성장 방향 문단 |
+| `job_outlook` | string | 현재 적합도와 보완 포인트를 바탕으로 한 직무 전망 문단 |
+| `final_assessment` | string | 점수와 Evidence를 변경하지 않는 최종 평가 문단 |
+
+**Deprecated action recommendation fields**
+
+| 필드 | 처리 |
+|------|------|
+| `recommendations` | Day 12 핵심 계약에서 제외. 과거 action recommendation 초안 호환용으로만 optional deprecated |
+| `roadmap` | Day 12 핵심 계약에서 제외. 과거 action roadmap 초안 호환용으로만 optional deprecated |
+| `difficulty` | deprecated. Skill Intelligence Layer에서 생성하지 않음 |
+| `expected_score_gain` | deprecated. 점수 개선폭 추정은 V1 설명 레이어 범위가 아님 |
+| `time_estimate` | deprecated. 기간 추정은 V1 설명 레이어 범위가 아님 |
 
 > `profile_blend`, `blended_requirements`, `blend_display_mode`, `blend_description`은 V1 사용자-facing 계약에서 제거된다.  
 > 디버깅이 필요하면 `report_json.internal_debug.profile_blend`처럼 optional 내부 필드로만 허용한다.

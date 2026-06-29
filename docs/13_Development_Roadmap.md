@@ -187,17 +187,20 @@ def select_strengths(matches, selected_requirements) -> list[Strength]:
 
 ---
 
-## Day 12 — Text Template Engine + Recommendation
+## Day 12 — Skill Intelligence + Narrative Template Layer
 
 ### 작업: `engine/text_template.py`
 
-`09_TEXT_TEMPLATE_RULES.md` §1~7 전체 구현:
+`09_TEXT_TEMPLATE_RULES.md` §1~9 전체 구현. Day 12는 Evidence를 바꾸는 작업이 아니라,
+이미 계산된 Evidence/strength/gap/score를 사람이 읽고 공감할 수 있는 Career Narrative로 설명하는 레이어다.
 
 ```python
 build_primary_profile_summary(primary_profile, secondary_profiles, confidence_level) -> str
 build_low_confidence_warning(confidence_level, evidence_count) -> str | None
 select_split_template(unique_score, common_score) -> str
-# strengths/gaps/recommendations 템플릿 전부 포함
+# strengths/gaps/skill_explanations/skill_narratives 템플릿 전부 포함
+build_skill_explanations(strengths, gaps, selected_requirements, primary_profile) -> list[dict]
+build_skill_narratives(summary, strengths, gaps, skill_explanations, primary_profile) -> dict
 polish_text(template_text) -> str  # LLM 폴백 구조 포함
 ```
 
@@ -207,7 +210,12 @@ polish_text(template_text) -> str  # LLM 폴백 구조 포함
 [ ] HR dominant → primary_profile_summary 템플릿
 [ ] MIXED → primary_profile + secondary_profiles 설명
 [ ] LOW → warning_message 필수
+[ ] skill_explanations 생성 (career_context, market_context, development_direction)
+[ ] skill_narratives 생성 (career_context, market_context, development_direction, job_outlook, final_assessment)
 [ ] LLM 없이 모든 텍스트 필드 채워짐 (폴백 동작)
+[ ] LLM은 선택적 윤색만 수행하고 score/Evidence/strength/gap/순서 변경 없음
+[ ] Evidence 모델 변경 없음
+[ ] expected_score_gain/difficulty/time_estimate 생성 없음
 [ ] priority_clause: target_priority_text 유래 강점에만 추가
 ```
 
@@ -221,7 +229,7 @@ polish_text(template_text) -> str  # LLM 폴백 구조 포함
 def build_report(
     report_id, target_priority_text,
     evidences, user_vector, primary_profile, secondary_profiles, selected_requirements,
-    matches, score, gaps, strengths, recommendations, roadmap,
+    matches, score, gaps, strengths, skill_explanations, skill_narratives,
     weight_source="MANUAL_V1"
 ) -> dict:
     return {
@@ -234,8 +242,8 @@ def build_report(
         "scores": score.dict(),
         "strengths": [s.dict() for s in strengths],
         "gaps": [g.dict() for g in gaps],
-        "recommendations": recommendations.dict(),
-        "roadmap": roadmap.dict(),
+        "skill_explanations": skill_explanations,
+        "skill_narratives": skill_narratives,
         "reportSections": DEFAULT_12_SECTIONS,
     }
 ```
@@ -248,6 +256,8 @@ def build_report(
 [ ] targetJobAnalysis.unique_requirements[].source_profiles 포함
 [ ] evidenceMapping에 source="target_priority_text" 항목 포함
 [ ] summary.primary_profile_summary, LOW warning 정확
+[ ] skill_explanations/skill_narratives 포함
+[ ] recommendations/roadmap/expected_score_gain/difficulty/time_estimate 미생성
 ```
 
 ---

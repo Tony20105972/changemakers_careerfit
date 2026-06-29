@@ -16,7 +16,7 @@ LLM은 이 템플릿 결과를 **윤색만** 가능. 내용 변경 불가. (`00_
 | `strengths[].headline` | `strength_selector.py` | 스킬/직무 맥락/근거 수를 담은 짧은 결정론 문장 |
 | `gaps[].reason` | `gap_analyzer.py` | match_level, 대표 evidence, confidence를 담은 짧은 결정론 문장 |
 | `gaps[].recommendation_hint` | `gap_analyzer.py` | gap별 후속 행동을 안내하는 짧은 hint 문장 |
-| `summary`, `final_assessment`, `roadmap` | `text_template.py` | 리포트 요약, 최종 판단, 단계별 행동 문장 생성 |
+| `summary`, `skill_explanations`, `skill_narratives` | `text_template.py` | 리포트 요약, 스킬별 의미 설명, 커리어 내러티브 문장 생성 |
 | LLM | optional polish | 템플릿 결과의 윤색만 허용. 필드, 점수, 항목, 순서 변경 금지 |
 
 ---
@@ -134,74 +134,79 @@ GAP_SEVERITY_LABELS = {
 
 | 필드 | 텍스트 사용 |
 |------|-------------|
-| `severity` | `CRITICAL \| HIGH \| MEDIUM \| LOW` 표시 및 추천 우선순위 입력 |
+| `severity` | `CRITICAL \| HIGH \| MEDIUM \| LOW` 표시 및 설명 강도 입력 |
 | `reason` | gap 카드/본문의 기본 설명. 엔진이 생성한 원문을 유지 |
-| `recommendation_hint` | 추천 엔진의 입력 hint. 완성 recommendation 문장으로 간주하지 않음 |
-| `gap_score` | 결핍 강도와 예상 개선폭 산정 입력 |
-| `rank`, `skill_key`, `label_ko` | key_gaps, recommendation, roadmap 연결 기준 |
+| `recommendation_hint` | gap 설명의 보조 재료. 완성 action recommendation 문장으로 간주하지 않음 |
+| `gap_score` | 결핍 강도 표현 입력. 예상 개선폭 산정에는 사용하지 않음 |
+| `rank`, `skill_key`, `label_ko` | key_gaps, skill_explanations 연결 기준 |
 
 ---
 
-## 7. 추천 문장 (`recommendations`)
+## 7. 스킬 설명 (`skill_explanations`)
 
-Day 12 recommendation schema 초안은 gap을 source로 하는 독립 섹션이다.
-`gaps[].recommendation_hint`는 추천의 재료이며, 최종 추천 문장은 아래 구조에서 생성한다.
+Day 12는 Action Recommendation이 아니라 Skill Intelligence Layer다.
+`text_template.py`는 Evidence, strength, gap을 변경하지 않고 각 스킬이 사용자의 커리어와 대표 프로필 시장에서
+어떤 의미를 갖는지 설명한다.
 
 ```json
 {
-  "recommendation_id": "rec_001",
-  "source_gap_skill_key": "labor_law",
-  "title": "노동법 실무 적용 경험 보강",
-  "detail": "노동법 관련 프로젝트 또는 자격 취득을 통해 핵심 결핍을 보완합니다.",
-  "priority": "HIGH",
-  "difficulty": "MEDIUM",
-  "expected_score_gain": 4.2,
-  "time_estimate": "4-6 weeks"
+  "skill_key": "labor_law",
+  "label_ko": "노동법",
+  "source": "gap",
+  "career_context": "HR 직무에서 노동법은 채용, 평가, 보상, 조직 운영 판단의 기준이 되는 핵심 역량입니다.",
+  "market_context": "인사 직무 채용 시장에서는 법적 리스크를 이해하고 실무 의사결정에 적용할 수 있는 역량을 중요하게 봅니다.",
+  "development_direction": "현재 Evidence에는 노동법 적용 경험이 확인되지 않으므로, 향후 경험 서술에서는 관련 판단 과정과 적용 사례를 보강하는 방향이 적절합니다."
 }
 ```
 
 | 필드 | 생성 규칙 |
 |------|-----------|
-| `recommendation_id` | deterministic id. 예: `rec_001` |
-| `source_gap_skill_key` | 연결된 `gaps[].skill_key` |
-| `priority` | `severity`와 `rank` 기준 (`CRITICAL/HIGH` 우선) |
-| `difficulty` | skill별 action template에서 결정. 없으면 `MEDIUM` |
-| `expected_score_gain` | `gap_score`와 requirement weight 기반 추정값 |
-| `time_estimate` | action template의 기본 기간 |
+| `skill_key` | `strengths[].skill_key` 또는 `gaps[].skill_key` |
+| `label_ko` | 원본 strength/gap의 라벨 유지 |
+| `source` | `strength \| gap` |
+| `career_context` | Evidence가 보여주는 현재 커리어 맥락 또는 Evidence 부재가 의미하는 설명 공백 |
+| `market_context` | `primary_profile` requirement의 `weight`, `is_core`, `skill_group` 기준 시장/직무 의미 |
+| `development_direction` | 실행 명령이 아닌 설명 방향. Evidence를 새로 만들거나 점수를 바꾸지 않음 |
 
 ```python
-RECOMMENDATION_TEMPLATES = {
-    "short_term": "{gap_label_ko} 역량 강화를 위해 {timeframe} 내 {action}을(를) 권장합니다.",
-    "mid_term_high_score": "현재 적합도 수준({score}점, 고유 역량 {unique_score}/65)에서 {primary_profile_label_ko} 포지션 지원이 가능합니다. {action}을(를) 통해 경쟁력을 높이세요.",
-    "mid_term_low_score":  "현재 적합도 수준({score}점)에서는 핵심 역량 보강을 우선하는 것을 권장합니다. {action}을(를) 통해 고유 역량({unique_score}/65)을 끌어올리세요.",
+SKILL_EXPLANATION_TEMPLATES = {
+    "strength_career_context": "{label_ko}은(는) 현재 Evidence에서 반복적으로 확인되는 강점이며, {primary_profile_label_ko} 직무 설명의 핵심 재료가 됩니다.",
+    "gap_career_context": "{label_ko}은(는) 현재 Evidence에서 충분히 확인되지 않아 커리어 설명에서 공백으로 남아 있습니다.",
+    "core_market_context": "{primary_profile_label_ko} 시장에서 {label_ko}은(는) 핵심 요구 역량으로 해석되므로, 적합도 판단의 중요한 기준입니다.",
+    "common_market_context": "{label_ko}은(는) 여러 직무에서 함께 요구되는 범용 역량이며, 협업과 실행 신뢰도를 설명하는 데 사용됩니다.",
+    "strength_development_direction": "이미 확인된 근거를 중심으로 역할, 성과, 판단 과정을 더 선명하게 연결하는 방향이 적절합니다.",
+    "gap_development_direction": "새 Evidence를 임의로 추가하지 않고, 부족한 지점을 앞으로 설명해야 할 성장 방향으로 표현합니다.",
 }
-
-def select_mid_term_template(unique_score: float) -> str:
-    return "mid_term_high_score" if (unique_score / 65) >= 0.6 else "mid_term_low_score"
 ```
 
 ---
 
-## 8. 로드맵 문장 (`roadmap`)
+## 8. 커리어 내러티브 (`skill_narratives`)
 
-Day 12 roadmap schema 초안은 recommendation을 기간별로 묶은 단계형 구조다.
+Day 12 Narrative Template Layer는 `skill_explanations`를 바탕으로 리포트 후반부의 읽히는 문단을 만든다.
+이는 단계별 행동 계획이 아니라 career/market/development/job outlook/final assessment를 연결하는 설명 레이어다.
 
 ```json
 {
-  "phase": "phase_1",
-  "period": "0-30 days",
-  "theme": "핵심 결핍 보완",
-  "actions": ["노동법 실무 사례 3건 정리", "관련 프로젝트 포트폴리오 초안 작성"],
-  "expected_outcome": "핵심 gap에 대한 설명 가능한 근거 확보"
+  "career_context": "확인된 강점은 채용과 온보딩 실행 경험에 집중되어 있으며, HR 운영형 역할과 잘 맞습니다.",
+  "market_context": "시장 관점에서는 채용 운영 경험에 더해 노동법, 급여, 평가 운영처럼 리스크와 제도를 다루는 역량이 함께 요구됩니다.",
+  "development_direction": "새 Evidence를 만들거나 점수를 조정하지 않고, 현재 확인된 gap을 커리어 설명에서 보완해야 할 방향으로 해석합니다.",
+  "job_outlook": "대표 프로필인 HR 기준으로는 실무 운영 경험이 강점이며, 제도/법무 기반 역량 설명이 강화될수록 지원 가능성이 높아집니다.",
+  "final_assessment": "현재 리포트는 HR 적합성을 설명할 충분한 실무 근거를 포함하지만, 노동법과 급여 관리에 대한 설명 가능성은 보완이 필요합니다."
 }
 ```
 
-`actions[]`는 recommendation의 `detail`, `difficulty`, `time_estimate`를 사용해 생성한다.
-LOW confidence에서는 추가 입력 확보 행동을 첫 단계에 포함할 수 있다.
+| 필드 | 생성 규칙 |
+|------|-----------|
+| `career_context` | 상위 strengths와 gaps를 함께 읽어 사용자의 현재 커리어 서사를 설명 |
+| `market_context` | `primary_profile` requirement 기준으로 시장/직무 요구를 설명. 외부 실시간 API 사용 금지 |
+| `development_direction` | action list가 아니라 보완해야 할 설명 방향을 제시 |
+| `job_outlook` | `fit_level`, `unique_score`, `common_score`, 핵심 gap을 바탕으로 직무 전망을 설명 |
+| `final_assessment` | 점수와 Evidence를 변경하지 않는 최종 판단 문단 |
 
 ---
 
-## 9. 결론 문장 (`final_assessment`)
+## 9. 최종 평가 문장 (`skill_narratives.final_assessment`)
 
 ```python
 CONCLUSION_TEMPLATES = {
@@ -211,6 +216,23 @@ CONCLUSION_TEMPLATES = {
     "LOW_FIT":       "현재 단계에서는 고유 핵심 역량({unique_score}/65) 확보가 선행되어야 합니다. 6개월 이상의 준비 기간을 권장합니다.",
 }
 ```
+
+`final_assessment`는 독립 action recommendation이 아니며 `skill_narratives` 내부의 최종 평가 문단이다.
+LLM은 선택적 윤색만 가능하고, 판단 등급·점수·Evidence 참조를 변경할 수 없다.
+
+---
+
+## 9.1 Deprecated Action Recommendation Fields
+
+아래 필드는 Day 12 action recommendation 초안의 잔재이며 V1 Skill Intelligence Layer에서는 생성하지 않는다.
+
+| 필드 | 처리 |
+|------|------|
+| `recommendations` | optional deprecated. 새 Day 12 구현의 기준이 아님 |
+| `roadmap` | optional deprecated. 새 Day 12 구현의 기준이 아님 |
+| `difficulty` | deprecated. 난이도 추정은 설명 레이어 범위가 아님 |
+| `expected_score_gain` | deprecated. 예상 점수 상승값은 생성하지 않음 |
+| `time_estimate` | deprecated. 기간 추정은 생성하지 않음 |
 
 ---
 
@@ -235,7 +257,7 @@ CONCLUSION_TEMPLATES = {
 **LLM 프롬프트 구조:**
 ```
 System: 당신은 커리어 리포트 문장을 자연스럽게 다듬는 편집자입니다.
-        내용(점수, 강점 항목, 갭 항목, 추천 행동, UNIQUE/COMMON 구분,
+        내용(점수, 강점 항목, 갭 항목, 스킬 설명, UNIQUE/COMMON 구분,
         primary_profile, confidence_level, warning_message)는 절대 변경하지 마세요.
         문장의 흐름과 자연스러움만 개선하세요.
 

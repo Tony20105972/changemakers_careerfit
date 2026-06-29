@@ -15,7 +15,7 @@
 1. **모든 필드는 타입과 예시 값을 함께 명시한다.** placeholder가 아닌 실제 값으로 작성한다.
 2. **구조 통일성:** 어떤 입력이든, LOW confidence 포함, Report JSON의 **key 집합은 100% 동일**하다. 값만 달라진다.
 3. **고유(UNIQUE) / 공통(COMMON) 스킬 구분이 스키마 레벨에 반영된다.**
-4. **대표 프로필 투명성 (v3.1 신규):** `meta.primary_profile`이 리포트의 점수·갭·추천 기준이다.  
+4. **대표 프로필 투명성 (v3.1 신규):** `meta.primary_profile`이 리포트의 점수·갭·설명 기준이다.
    입력 근거가 부족하면 `confidence_level=LOW`와 `warning_message`로 명시한다.
 5. 각 섹션 끝에는 **"PDF 렌더링 위치"** 주석이 있다. (`10_PDF_TEMPLATE_SPEC.md`와 연결)
 
@@ -34,14 +34,15 @@
   "scores": { ... },
   "strengths": [ ... ],
   "gaps": [ ... ],
-  "recommendations": { ... },
-  "roadmap": { ... },
+  "skill_explanations": [ ... ],
+  "skill_narratives": { ... },
   "reportSections": [ ... ]
 }
 ```
 
 > `marketAnalysis`는 V1.1에서 추가 예정 (트랙 2 — 사람인/워크넷 배치 데이터 연동 시).  
 > V1에서는 12개 top-level key로 구성된다. (변경 없음)
+> `recommendations`, `roadmap`은 Day 12 action recommendation 초안에서 사용하던 이름이며, V1 Day 12 핵심 스키마에서는 deprecated이다.
 
 ---
 
@@ -481,51 +482,54 @@ gap별 후속 행동을 안내하는 짧은 템플릿 문구다.
 
 ---
 
-## 10~11. `recommendations`, `roadmap`
+## 10~11. `skill_explanations`, `skill_narratives`
 
-Day 12 recommendation/roadmap 초안. 이 섹션들이 참조하는 `skill_key`/`weight`/`is_core`는 모두 §4의
-`primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
+Day 12 Skill Intelligence + Narrative Template Layer. 이 섹션은 Evidence, match, score, strength, gap을
+변경하지 않고 사람이 읽고 공감할 수 있는 커리어 설명을 생성한다. 참조하는 `skill_key`/`weight`/`is_core`는 모두
+§4의 `primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
 
 `09_TEXT_TEMPLATE_RULES.md`의 템플릿에서 `{job_family_ko}` 같은 단일 라벨 변수는
 v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES.md` 참조).
 
 ```json
 {
-  "recommendations": {
-    "items": [
-      {
-        "recommendation_id": "rec_001",
-        "source_gap_skill_key": "labor_law",
-        "title": "노동법 실무 적용 경험 보강",
-        "detail": "노동법 관련 프로젝트 또는 자격 취득을 통해 핵심 결핍을 보완합니다.",
-        "priority": "HIGH",
-        "difficulty": "MEDIUM",
-        "expected_score_gain": 4.2,
-        "time_estimate": "4-6 weeks"
-      }
-    ]
-  },
-  "roadmap": {
-    "phases": [
-      {
-        "phase": "phase_1",
-        "period": "0-30 days",
-        "theme": "핵심 결핍 보완",
-        "actions": ["노동법 실무 사례 3건 정리"],
-        "expected_outcome": "핵심 gap에 대한 설명 가능한 근거 확보"
-      }
-    ]
+  "skill_explanations": [
+    {
+      "skill_key": "labor_law",
+      "label_ko": "노동법",
+      "source": "gap",
+      "career_context": "HR 직무에서 노동법은 채용, 평가, 보상, 조직 운영 판단의 기준이 되는 핵심 역량입니다.",
+      "market_context": "인사 직무 채용 시장에서는 법적 리스크를 이해하고 실무 의사결정에 적용할 수 있는 역량을 중요하게 봅니다.",
+      "development_direction": "현재 Evidence에는 노동법 적용 경험이 확인되지 않으므로, 향후 경험 서술에서는 관련 판단 과정과 적용 사례를 보강하는 방향이 적절합니다."
+    }
+  ],
+  "skill_narratives": {
+    "career_context": "확인된 강점은 채용과 온보딩 실행 경험에 집중되어 있으며, HR 운영형 역할과 잘 맞습니다.",
+    "market_context": "시장 관점에서는 채용 운영 경험에 더해 노동법, 급여, 평가 운영처럼 리스크와 제도를 다루는 역량이 함께 요구됩니다.",
+    "development_direction": "새 Evidence를 만들거나 점수를 조정하지 않고, 현재 확인된 gap을 커리어 설명에서 보완해야 할 방향으로 해석합니다.",
+    "job_outlook": "대표 프로필인 HR 기준으로는 실무 운영 경험이 강점이며, 제도/법무 기반 역량 설명이 강화될수록 지원 가능성이 높아집니다.",
+    "final_assessment": "현재 리포트는 HR 적합성을 설명할 충분한 실무 근거를 포함하지만, 노동법과 급여 관리에 대한 설명 가능성은 보완이 필요합니다."
   }
 }
 ```
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `recommendations.items[].recommendation_id` | string | deterministic id |
-| `recommendations.items[].source_gap_skill_key` | string | 연결된 `gaps[].skill_key` |
-| `recommendations.items[].expected_score_gain` | number | `gap_score`/requirement weight 기반 예상 개선폭 |
-| `roadmap.phases[].actions` | array<string> | recommendation 기반 단계별 행동 |
-| `roadmap.phases[].expected_outcome` | string | 단계 완료 시 기대 결과 |
+| `skill_explanations[].skill_key` | string | 연결된 `strengths[].skill_key` 또는 `gaps[].skill_key` |
+| `skill_explanations[].source` | enum | `strength \| gap` |
+| `skill_explanations[].career_context` | string | 사용자의 커리어 안에서 해당 스킬이 갖는 의미 |
+| `skill_explanations[].market_context` | string | 대표 프로필의 시장/직무 요구에서 해당 스킬이 갖는 의미 |
+| `skill_explanations[].development_direction` | string | 실행 계획이 아닌 설명 방향. Evidence 추가/변경 없이 보완 관점을 제시 |
+| `skill_narratives.career_context` | string | 전체 Evidence/strength/gap을 커리어 맥락으로 해석한 문단 |
+| `skill_narratives.market_context` | string | `primary_profile` 요구사항 기준 시장/직무 맥락 문단 |
+| `skill_narratives.development_direction` | string | action list가 아닌 성장 방향 문단 |
+| `skill_narratives.job_outlook` | string | 현재 적합도와 보완 포인트를 바탕으로 한 직무 전망 문단 |
+| `skill_narratives.final_assessment` | string | 점수와 Evidence를 변경하지 않는 최종 평가 문단 |
+
+**Deprecated**
+
+`recommendations`, `roadmap`, `difficulty`, `expected_score_gain`, `time_estimate`는 Day 12 action recommendation 초안의 잔재다.
+V1 Day 12 구현은 이 필드들을 생성하지 않는다.
 
 ---
 
@@ -537,13 +541,14 @@ v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES
 4. LOW confidence 결과는 반드시 `meta.warning_message`와 함께 사용자에게 표시해야 한다.
 5. 모든 Evidence 참조 ID는 `evidenceMapping[]` 또는 엔진 Evidence 목록에 실제 존재해야 한다.
 
-**PDF 렌더링 위치:** Section 8~11 (변경 없음)
+**PDF 렌더링 위치:** Section 8~11 (strength/gap 해석, skill intelligence, narrative)
 
 ---
 
 ## 12. `reportSections`
 
-PDF 렌더링 순서 제어. V1은 12개 섹션 고정. (구조 변경 없음)
+PDF 렌더링 순서 제어. V1은 12개 섹션 고정.
+`final_assessment` 섹션은 `skill_narratives.final_assessment`를 렌더링한다.
 
 ```json
 {
@@ -557,8 +562,8 @@ PDF 렌더링 순서 제어. V1은 12개 섹션 고정. (구조 변경 없음)
     { "section_id": "fit_score",        "order": 7,  "enabled": true },
     { "section_id": "strength_analysis","order": 8,  "enabled": true },
     { "section_id": "gap_analysis",     "order": 9,  "enabled": true },
-    { "section_id": "recommendation",   "order": 10, "enabled": true },
-    { "section_id": "roadmap",          "order": 11, "enabled": true },
+    { "section_id": "skill_intelligence","order": 10, "enabled": true },
+    { "section_id": "career_narrative", "order": 11, "enabled": true },
     { "section_id": "final_assessment", "order": 12, "enabled": true }
   ]
 }

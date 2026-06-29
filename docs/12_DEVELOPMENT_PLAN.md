@@ -30,9 +30,10 @@ Week 2 — Engine Week
   검증: 결정론적 재현, 손작성 fixture와 구조 100% 일치
 
 Week 3 — Product Week
-  목표: Template → HTML → PDF → API → DB → React → Deploy
+  목표: Skill Intelligence Template → HTML → PDF → API → DB → React → Deploy
   산출물: 실제 URL에서 사용자 입력 → PDF 다운로드 전체 플로우
           (Primary Profile Selection, LOW warning, source_profiles 보조 배지 포함)
+          Day 12는 action recommendation이 아니라 Evidence 기반 career narrative layer 구현
 ```
 
 ---
@@ -60,6 +61,7 @@ Week 3 — Product Week
 | 백엔드 | FastAPI (Python) |
 | 엔진 | Python (순수 함수, DB/API 의존성 없음) |
 | **프로필 선택 모듈 (v3.1 신규)** | `scripts/profile_selector.py` (primary_profile/fallback 선택, 외부 ML 모델 없음) |
+| **Skill Intelligence Layer (Day 12)** | `engine/text_template.py` (Evidence 변경 없이 skill_explanations/skill_narratives 생성) |
 | PDF | Jinja2 + Playwright |
 | 프론트엔드 | React + TypeScript |
 | 배포 | Vercel (frontend) / Render (backend) |
@@ -89,6 +91,8 @@ sales, design, finance, engineering, customer_success
 - N>10 profile 추가 (V1 검증 범위. 운영 데이터 없이 추가 금지)
 - `synthesize_requirements()` (즉석 합성) — 검증 불가 코드 경로 제거
 - 분석 차단 상태 enum 또는 차단형 422 구현
+- Day 12에서 Evidence 모델 변경 또는 새 Evidence 생성
+- Day 12에서 `expected_score_gain`, `difficulty`, `time_estimate` 기반 action recommendation 생성 금지
 
 ---
 

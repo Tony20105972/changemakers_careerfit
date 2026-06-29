@@ -14,18 +14,17 @@ from typing import Any
 
 REPORT_TOP_LEVEL_KEYS = (
     "meta",
-    "career_profile",
-    "target_job_analysis",
-    "market_intelligence",
-    "skill_mapping",
-    "evidence_mapping",
-    "requirement_matching",
-    "fit_score",
-    "strength_analysis",
-    "gap_analysis",
-    "career_guidance",
-    "executive_summary",
-    "final_assessment",
+    "summary",
+    "careerProfile",
+    "targetJobAnalysis",
+    "skillMapping",
+    "evidenceMapping",
+    "scores",
+    "strengths",
+    "gaps",
+    "skill_explanations",
+    "skill_narratives",
+    "reportSections",
 )
 
 
@@ -47,11 +46,11 @@ def build_report(
     final_assessment: Any,
     version: str = "1.0.0",
     generated_at: str | None = None,
-    career_profile: Any | None = None,
-    target_job_analysis: Any | None = None,
-    market_intelligence: Any | None = None,
-    skill_mapping: Any | None = None,
-    requirement_matching: Any | None = None,
+    careerProfile: Any | None = None,
+    targetJobAnalysis: Any | None = None,
+    skillMapping: Any | None = None,
+    skill_narratives: Any | None = None,
+    reportSections: Any | None = None,
 ) -> dict[str, Any]:
     """Assemble a Report JSON from completed engine outputs.
 
@@ -68,23 +67,23 @@ def build_report(
             version=version,
             generated_at=generated_at,
         ),
-        "career_profile": _json_ready(career_profile or {}),
-        "target_job_analysis": _json_ready(target_job_analysis or {}),
-        "market_intelligence": _json_ready(market_intelligence or {}),
-        "skill_mapping": _json_ready(skill_mapping or {}),
-        "evidence_mapping": _json_ready(evidenceMapping),
-        "requirement_matching": _json_ready(requirement_matching or {}),
-        "fit_score": _json_ready(scores),
-        "strength_analysis": _json_ready(strengths),
-        "gap_analysis": _json_ready(gaps),
-        "career_guidance": _build_career_guidance(
+        "summary": _json_ready(executive_summary),
+        "careerProfile": _json_ready(careerProfile or {}),
+        "targetJobAnalysis": _json_ready(targetJobAnalysis or {}),
+        "skillMapping": _json_ready(skillMapping or {}),
+        "evidenceMapping": _json_ready(evidenceMapping),
+        "scores": _json_ready(scores),
+        "strengths": _json_ready(strengths),
+        "gaps": _json_ready(gaps),
+        "skill_explanations": _json_ready(skill_explanations),
+        "skill_narratives": _build_skill_narratives(
+            skill_narratives=skill_narratives,
             strength_narratives=strength_narratives,
             gap_narratives=gap_narratives,
-            skill_explanations=skill_explanations,
             job_outlook=job_outlook,
+            final_assessment=final_assessment,
         ),
-        "executive_summary": _json_ready(executive_summary),
-        "final_assessment": _json_ready(final_assessment),
+        "reportSections": _json_ready(reportSections or _default_report_sections()),
     }
     return {key: report[key] for key in REPORT_TOP_LEVEL_KEYS}
 
@@ -108,19 +107,41 @@ def _build_meta(
     }
 
 
-def _build_career_guidance(
+def _build_skill_narratives(
     *,
+    skill_narratives: Any,
     strength_narratives: Any,
     gap_narratives: Any,
-    skill_explanations: Any,
     job_outlook: Any,
+    final_assessment: Any,
 ) -> dict[str, Any]:
+    narratives = _json_ready(skill_narratives or {})
+    if not isinstance(narratives, dict):
+        narratives = {}
     return {
+        **narratives,
         "strength_narratives": _json_ready(strength_narratives),
         "gap_narratives": _json_ready(gap_narratives),
-        "skill_explanations": _json_ready(skill_explanations),
         "job_outlook": _json_ready(job_outlook),
+        "final_assessment": _json_ready(final_assessment),
     }
+
+
+def _default_report_sections() -> list[dict[str, Any]]:
+    return [
+        {"section_id": "cover", "order": 1, "enabled": True},
+        {"section_id": "executive_summary", "order": 2, "enabled": True},
+        {"section_id": "career_profile", "order": 3, "enabled": True},
+        {"section_id": "target_job", "order": 4, "enabled": True},
+        {"section_id": "skill_mapping", "order": 5, "enabled": True},
+        {"section_id": "evidence_mapping", "order": 6, "enabled": True},
+        {"section_id": "fit_score", "order": 7, "enabled": True},
+        {"section_id": "strength_analysis", "order": 8, "enabled": True},
+        {"section_id": "gap_analysis", "order": 9, "enabled": True},
+        {"section_id": "skill_intelligence", "order": 10, "enabled": True},
+        {"section_id": "career_narrative", "order": 11, "enabled": True},
+        {"section_id": "final_assessment", "order": 12, "enabled": True},
+    ]
 
 
 def _json_ready(value: Any) -> Any:

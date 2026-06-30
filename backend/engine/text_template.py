@@ -11,6 +11,9 @@ from typing import Any
 
 from backend.engine.narrative_composer import (
     DEFAULT_REGISTRY_PATH,
+    FIT_LABELS,
+    LOW_CONFIDENCE_PREFIX,
+    PROFILE_LABELS,
     compose_report_narratives,
     load_skill_registry,
 )

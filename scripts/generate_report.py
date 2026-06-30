@@ -18,11 +18,11 @@ sys.path.insert(0, str(REPO_ROOT))
 from backend.engine import (  # noqa: E402
     evidence_extractor,
     gap_analyzer,
+    narrative_composer,
     profile_selector,
     requirement_matcher,
     scoring_engine,
     strength_selector,
-    text_template,
 )
 from backend.engine.report_builder import REPORT_TOP_LEVEL_KEYS, build_report  # noqa: E402
 
@@ -37,7 +37,7 @@ FIT_LABELS = (
     (55, "MODERATE_FIT", "보통"),
     (0, "LOW_FIT", "미흡"),
 )
-PROFILE_LABELS = text_template.PROFILE_LABELS
+PROFILE_LABELS = narrative_composer.PROFILE_LABELS
 
 
 def main() -> int:
@@ -117,7 +117,13 @@ def _run_pipeline(fixture: dict[str, Any], fixture_name: str) -> dict[str, Any]:
         "gaps": gaps,
         "evidenceMapping": evidences,
     }
-    narratives = text_template.generate_narratives(seed_report)
+    narratives = narrative_composer.compose_report_narratives(
+        meta=seed_report["meta"],
+        scores=scores,
+        strengths=strengths,
+        gaps=gaps,
+        evidence_mapping=evidences,
+    )
     summary = build_summary(
         profile_result=profile_result,
         scores=scores,

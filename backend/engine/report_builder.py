@@ -75,7 +75,7 @@ def build_report(
             weight_source=weight_source,
             evidence_count=evidence_count,
         ),
-        "summary": _json_ready(executive_summary),
+        "summary": _build_summary(executive_summary),
         "careerProfile": _json_ready(careerProfile or {}),
         "targetJobAnalysis": _json_ready(targetJobAnalysis or {}),
         "skillMapping": _json_ready(skillMapping or {}),
@@ -83,8 +83,13 @@ def build_report(
         "scores": _json_ready(scores),
         "strengths": _json_ready(strengths),
         "gaps": _json_ready(gaps),
-        "skill_explanations": _json_ready(skill_explanations),
+        "skill_explanations": _build_skill_explanations(
+            skill_explanations=skill_explanations,
+            strength_narratives=strength_narratives,
+            gap_narratives=gap_narratives,
+        ),
         "skill_narratives": _build_skill_narratives(
+            executive_summary=executive_summary,
             skill_narratives=skill_narratives,
             strength_narratives=strength_narratives,
             gap_narratives=gap_narratives,
@@ -94,6 +99,13 @@ def build_report(
         "reportSections": _json_ready(reportSections or _default_report_sections()),
     }
     return {key: report[key] for key in REPORT_TOP_LEVEL_KEYS}
+
+
+def _build_summary(executive_summary: Any) -> dict[str, Any]:
+    summary = _json_ready(executive_summary)
+    if isinstance(summary, dict):
+        return summary
+    return {"one_line": summary}
 
 
 def _build_meta(
@@ -125,6 +137,7 @@ def _build_meta(
 
 def _build_skill_narratives(
     *,
+    executive_summary: Any,
     skill_narratives: Any,
     strength_narratives: Any,
     gap_narratives: Any,
@@ -135,12 +148,60 @@ def _build_skill_narratives(
     if not isinstance(narratives, dict):
         narratives = {}
     return {
-        "career_context": narratives.get("career_context", _json_ready(strength_narratives)),
-        "market_context": narratives.get("market_context", _json_ready(gap_narratives)),
+        "career_context": narratives.get("career_context", _summary_one_line(executive_summary)),
+        "market_context": narratives.get("market_context", _first_narrative_text(gap_narratives, job_outlook)),
         "development_direction": narratives.get("development_direction", _json_ready(final_assessment)),
         "job_outlook": _json_ready(job_outlook),
         "final_assessment": _json_ready(final_assessment),
     }
+
+
+def _build_skill_explanations(
+    *,
+    skill_explanations: Any,
+    strength_narratives: Any,
+    gap_narratives: Any,
+) -> list[Any]:
+    explanations = _json_ready(skill_explanations)
+    if isinstance(explanations, list) and explanations:
+        return explanations
+    assembled = []
+    assembled.extend(_narratives_to_explanations(strength_narratives, "strength"))
+    assembled.extend(_narratives_to_explanations(gap_narratives, "gap"))
+    return assembled
+
+
+def _narratives_to_explanations(narratives: Any, source: str) -> list[dict[str, Any]]:
+    items = _json_ready(narratives)
+    if not isinstance(items, list):
+        return []
+    explanations = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        explanations.append(
+            {
+                "skill_key": item.get("skill_key"),
+                "label_ko": item.get("label_ko"),
+                "source": source,
+                "career_context": item.get("narrative"),
+                "market_context": item.get("evidence_summary"),
+                "development_direction": item.get("summary_phrase"),
+            }
+        )
+    return explanations
+
+
+def _summary_one_line(executive_summary: Any) -> Any:
+    summary = _build_summary(executive_summary)
+    return summary.get("one_line")
+
+
+def _first_narrative_text(narratives: Any, fallback: Any) -> Any:
+    items = _json_ready(narratives)
+    if isinstance(items, list) and items and isinstance(items[0], dict):
+        return items[0].get("narrative") or _json_ready(fallback)
+    return _json_ready(fallback)
 
 
 def _default_report_sections() -> list[dict[str, Any]]:

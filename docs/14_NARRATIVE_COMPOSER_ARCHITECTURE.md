@@ -1,50 +1,50 @@
 # 14 — Narrative Composer Architecture
 
-CareerFit의 Narrative Composer는 `skill_descriptions.json`을 단순 설명 사전이 아니라
-Report JSON 전체에 영향을 주는 **Skill Intelligence Registry**로 확장하기 위한 설계다.
+CareerFit의 Narrative Composer는 Career Pattern Library가 만든 해석 신호와
+Skill Registry의 설명 데이터를 Report JSON narrative 위치로 조합하는 **Composition Layer**다.
 
 이 문서는 구현 코드가 아니라 문서 계약이다. 현재 V1의 `text_template.py`와 `report_builder.py`를
 대체하지 않고, 다음 단계에서 어떤 책임을 분리해야 하는지 정의한다.
 
 > **V1 기준:** Composer는 현재 `data/skill_descriptions.json`에 존재하는 필드만 사용한다.  
-> `frames`, `narrative_blocks`, `report_hooks`, `market_signals`, `evidence_patterns`,
-> `quality_rules`는 V2 확장안이며 V1 구현 필드가 아니다.
+> Pattern 감지와 우선순위 판단은 `15_CAREER_PATTERN_LIBRARY.md`의 Career Pattern Library 책임이다.
 
 ---
 
 ## 1. 목적
 
 현재 `text_template.py`는 `strengths`, `gaps`, `scores`, `evidenceMapping`을 읽어
-`executive_summary`, `skill_explanations`, `skill_narratives`를 결정론적으로 생성한다.
-이 구조는 V1에는 충분하지만, Skill 하나가 리포트 전체의 해석 품질을 끌어올리는 구조로는 부족하다.
+`executive_summary`, `skill_explanations`, `skill_narratives`를 결정론적으로 표면화한다.
+이 구조는 V1에는 충분하지만, Pattern Library가 만든 상위 Career Story를 어느 Report JSON 위치에
+배치할지에 대한 Composition Layer 경계가 필요하다.
 
 Narrative Composer의 목적은 다음과 같다.
 
 | 목표 | 설명 |
 |------|------|
-| Skill 중심 해석 | `skill_key`별 의미가 Executive Summary, Strength, Gap, Job Outlook, Final Assessment에 일관되게 반영된다. |
+| Pattern 결과 조합 | Career Pattern Library가 만든 해석 신호가 Executive Summary, Strength, Gap, Job Outlook, Final Assessment에 일관되게 반영된다. |
 | Evidence 연결 | 모든 문장은 실제 Evidence, match level, score, primary_profile을 재료로만 생성된다. |
 | 결정론 유지 | 동일 Report JSON 입력은 동일 Registry 필드 선택과 동일 출력으로 이어진다. |
-| Registry 확장성 | 새 Skill을 추가하면 해당 Skill의 설명 필드가 전체 리포트 품질을 함께 개선한다. |
+| Registry 경계 유지 | Skill Registry는 Knowledge Layer로서 데이터만 제공하고, Composer는 이를 Pattern 결과와 조합한다. |
 
 ---
 
 ## 2. 왜 `text_template.py`만으로 부족한가
 
-`text_template.py`는 현재 “문장 생성 함수”에 가깝다. Registry의 필드를 읽고 문단을 만들지만,
-Skill이 리포트의 어느 위치에서 어떤 관점으로 쓰여야 하는지까지 충분히 표현하지 않는다.
+`text_template.py`는 현재 “문장 렌더링 함수”에 가깝다. Registry의 필드를 읽고 문단을 만들지만,
+Pattern Library가 만든 해석 신호를 어느 Report JSON 위치에 배치할지까지 충분히 표현하지 않는다.
 
 한계는 다음과 같다.
 
 | 한계 | 영향 |
 |------|------|
 | 단일 설명 필드 중심 | `definition`, `market_context`가 여러 리포트 섹션에서 같은 방식으로 재사용될 수 있다. |
-| report hook 부재 | 어떤 Skill이 `summary`, `skill_explanations`, `skill_narratives` 중 어디에 강하게 반영될지 명시하기 어렵다. |
-| block 선택 기준 부족 | V1은 현재 Registry 필드 조합으로 선택하며, 별도 block 후보 구조는 V2에서 다룬다. |
+| report hook 부재 | 어떤 Pattern 해석이 `summary`, `skill_explanations`, `skill_narratives` 중 어디에 강하게 반영될지 명시하기 어렵다. |
+| Pattern 결과 조합 기준 부족 | V1은 현재 Skill별 필드 조합에 가깝고, Pattern Library 결과를 받는 Composition 경계가 약하다. |
 | 품질 감사 분리 부족 | 반복 문장, 행동 지시, Evidence 없는 주장 여부를 Composer 입력 단계에서 통제하기 어렵다. |
 
 따라서 다음 단계의 `text_template.py`는 최종 렌더러에 가까워지고,
-Skill별 의미 선택과 조합은 Composer가 담당해야 한다.
+Pattern Library 결과와 Skill Registry 데이터를 조합하는 책임은 Composer가 담당해야 한다.
 
 ---
 
@@ -61,43 +61,34 @@ Deterministic First 제품이다. LangChain, CrewAI 같은 외부 프레임워�
 | Report JSON 외부 상태 의존 | Report JSON First 원칙이 약해진다. |
 | 디버깅 단위가 커짐 | 어떤 Skill이 어떤 문장에 영향을 줬는지 추적하기 어렵다. |
 
-자체 Composer는 JSON Registry, Engine Output, Report JSON만 사용한다.
-따라서 block 선택, 정렬, fallback, audit을 모두 코드와 데이터 계약으로 추적할 수 있다.
+자체 Composer는 JSON Registry, Pattern Library output, Engine Output, Report JSON만 사용한다.
+따라서 조합, 정렬, fallback, audit을 모두 코드와 데이터 계약으로 추적할 수 있다.
 
 ---
 
 ## 4. 전체 흐름
 
 ```
-Skill Intelligence Registry
-        ↓
-Narrative Block Selector
-        ↓
-Report Composer
-        ↓
-Template Renderer
-        ↓
-Quality Audit
-        ↓
-Report JSON
+Evidence -> Evidence Mapping -> Skill Registry -> Career Pattern Library
+  -> Narrative Composer -> Text Template -> Report Builder -> Report JSON
 ```
 
-| 단계 | 책임 | 금지 |
-|------|------|------|
-| Skill Intelligence Registry | V1 Skill별 definition, behavior, value, narrative 필드 보관 | 사용자 Evidence 생성 |
-| Narrative Block Selector | strength/gap/score/confidence에 맞는 V1 Registry 필드 선택 | 점수 재계산 |
-| Report Composer | 선택된 필드를 `summary`, `skill_explanations`, `skill_narratives`로 조합 | 새 강점/갭 생성 |
-| Template Renderer | 문장 표면을 Report JSON 필드에 맞게 렌더링 | 의미 변경 |
-| Quality Audit | 반복 문구, 빈 필드, action wording, Evidence anchor 누락 검사 | 리포트 내용 임의 수정 |
+| Layer | 책임 | 금지 |
+|-------|------|------|
+| Skill Registry = Knowledge Layer | V1 Skill별 definition, behavior, value, narrative 필드 데이터 제공 | 사용자 Evidence 생성, Interpretation Layer 책임 침범 |
+| Career Pattern Library = Interpretation Layer | Evidence/Skill 조합을 Career Story로 해석 | 점수 재계산, Requirement Match 수정 |
+| Narrative Composer = Composition Layer | Pattern Library가 만든 해석 신호를 `summary`, `skill_explanations`, `skill_narratives`로 조합 | 새 강점/갭 생성, Interpretation Layer 책임 침범 |
+| Report Builder = Assembly Layer | `05_REPORT_SCHEMA.md`의 공식 Report JSON 조립 | schema key 임의 추가 |
 
 ---
 
 ## 5. 핵심 컴포넌트
 
-### 5.1 Skill Intelligence Registry
+### 5.1 Skill Registry
 
-V1 Registry는 현재 `data/skill_descriptions.json`의 실제 필드 구조를 기준으로 한다.
-각 Skill은 설명 문장만 가지는 것이 아니라 리포트 전체에서 쓰일 해석 재료를 가진다.
+V1 Skill Registry는 Knowledge Layer이며, 현재 `data/skill_descriptions.json`의 실제 필드 구조를 기준으로 한다.
+각 Skill은 설명 문장과 리포트 전체에서 쓰일 해석 재료를 데이터로 제공한다. Registry 자체가 Pattern이나
+Narrative를 직접 생성하지 않는다.
 
 V1 필드:
 
@@ -120,10 +111,10 @@ V1 필드:
 V1 Composer는 위 필드 외의 Registry 입력을 요구하지 않는다.
 없는 필드를 임의로 가정하거나 생성하지 않는다.
 
-### 5.2 Narrative Block Selector
+### 5.2 Pattern Result Selector
 
-Block Selector는 분석을 하지 않는다. 이미 생성된 Engine Output을 읽고
-현재 Registry 필드 중 어떤 문장 재료를 사용할지 선택한다.
+Pattern Result Selector는 분석을 하지 않는다. 이미 생성된 Engine Output과 Career Pattern Library output을 읽고
+현재 Registry 필드 중 어떤 문장 재료를 함께 사용할지 선택한다.
 
 입력:
 
@@ -134,6 +125,7 @@ Block Selector는 분석을 하지 않는다. 이미 생성된 Engine Output을 
 - `scores`
 - `evidenceMapping[]`
 - Skill Registry
+- Career Pattern Library output
 
 선택 기준:
 
@@ -143,15 +135,16 @@ Block Selector는 분석을 하지 않는다. 이미 생성된 Engine Output을 
 - `is_core`
 - evidence 존재 여부
 - LOW confidence 여부
+- pattern priority와 narrative hook
 
 V1에서는 별도 `narrative_blocks` 구조를 사용하지 않는다.
 `strength_narrative`, `gap_narrative`, `business_value`, `market_context`,
-`career_relevance`, `development_direction`, `summary_phrase`를 결정론적으로 조합한다.
+`career_relevance`, `development_direction`, `summary_phrase`를 Pattern hook에 맞춰 결정론적으로 조합한다.
 
-### 5.3 Report Composer
+### 5.3 Narrative Composer
 
-Report Composer는 선택된 Registry 필드를 Report JSON 섹션에 배치한다.
-새로운 점수, 강점, gap을 만들지 않고, 이미 존재하는 Engine Output을 narrative로 연결한다.
+Narrative Composer는 Pattern Library가 만든 해석 신호와 선택된 Registry 필드를 Report JSON 섹션에 배치한다.
+새로운 점수, 강점, gap, Pattern을 만들지 않고, 이미 존재하는 Engine Output과 Pattern output을 narrative로 연결한다.
 
 연결 대상:
 
@@ -167,16 +160,16 @@ V1 중간 출력 매핑:
 
 | Composer output | Report JSON 위치 |
 |-----------------|------------------|
-| `executive_summary` | `summary.one_line` 또는 `summary` 내부 narrative 필드 |
+| `executive_summary` | `summary.one_line` |
 | `strength_narratives` | `skill_explanations[]` 중 `source="strength"` 항목 |
 | `gap_narratives` | `skill_explanations[]` 중 `source="gap"` 항목 |
 | `skill_explanations` | `skill_explanations[]` |
 | `job_outlook` | `skill_narratives.job_outlook` |
 | `final_assessment` | `skill_narratives.final_assessment` |
 
-### 5.4 Template Renderer
+### 5.4 Text Template
 
-Renderer는 Composer가 선택한 Registry 필드를 최종 문장으로 표면화한다.
+Text Template은 Composer가 조합한 결과를 최종 문장으로 표면화한다.
 LLM이 사용되더라도 Renderer 이후의 optional polish로만 동작하며, 내용 변경은 금지된다.
 
 Renderer가 유지해야 하는 값:
@@ -236,14 +229,15 @@ Composer의 최종 출력은 반드시 `05_REPORT_SCHEMA.md`의 공식 Report JS
 ## 7. Skill 추가 시 품질이 좋아지는 구조
 
 새 Skill은 단순히 label과 definition을 추가하는 것이 아니다.
-해당 Skill이 리포트 전체의 어느 문장에 어떤 의미로 반영될지 함께 정의한다.
+해당 Skill이 Knowledge Layer에서 어떤 설명 재료를 제공할지 정의하고, Pattern 해석은
+`15_CAREER_PATTERN_LIBRARY.md`의 Interpretation Layer가 담당한다.
 
 V1 추가 순서:
 
 1. `skill_key`와 taxonomy 등록
 2. profile requirement에서 UNIQUE/COMMON 및 weight 연결
 3. Evidence extraction keyword 연결
-4. Skill Intelligence Registry의 V1 설명 필드 작성
+4. Skill Registry의 V1 설명 필드 작성
 5. Quality Audit 통과
 
 이 구조에서는 Skill이 추가될수록 다음 품질이 함께 좋아진다.
@@ -251,7 +245,7 @@ V1 추가 순서:
 - Executive Summary가 더 구체적인 강점/갭 언어를 사용한다.
 - Strength 설명이 단순 칭찬이 아니라 조직 기여로 연결된다.
 - Gap 설명이 결핍 단정이 아니라 Evidence 공백 해석이 된다.
-- Job Outlook이 score뿐 아니라 Skill 조합을 읽는다.
+- Job Outlook이 score뿐 아니라 Pattern Library가 해석한 Skill 조합을 읽는다.
 - Final Assessment가 사용자의 경험 의미를 더 정확히 요약한다.
 
 ---
@@ -280,19 +274,10 @@ V1 추가 순서:
 
 ---
 
-## 8.1 V2 확장안
+## 8.1 확장 기준
 
-아래 필드는 V1 구현 계약이 아니라 V2 확장안이다.
-V1 Composer는 이 필드가 없어도 동작해야 하며, 현재 Registry에 필수로 요구하지 않는다.
-
-| 필드 | V2 의미 |
-|------|---------|
-| `frames[]` | 해당 Skill을 읽는 관점. 예: growth, risk, accuracy, collaboration. |
-| `narrative_blocks` | summary, strength, gap, outlook, final assessment에 사용할 block 후보. |
-| `report_hooks` | 어떤 Report JSON 섹션에 영향을 줄 수 있는지 명시한다. |
-| `market_signals` | 실시간 시장 데이터가 아닌 수동 Registry 기반 시장 맥락 신호. |
-| `evidence_patterns` | 어떤 Evidence 유형과 원문 패턴이 해석 강도를 높이는지 설명한다. |
-| `quality_rules` | 금지 표현, Evidence anchor 필수 여부, fallback 조건. |
+Pattern 감지, Pattern 우선순위, Narrative Hook, Explainability 확장은
+`15_CAREER_PATTERN_LIBRARY.md`를 기준으로 한다. 이 문서는 Composition Layer의 조합 책임만 정의한다.
 
 ## 9. 기존 문서와의 관계
 
@@ -301,9 +286,10 @@ V1 Composer는 이 필드가 없어도 동작해야 하며, 현재 Registry에 �
 | `00_PROJECT_VISION.md` | Evidence First, Deterministic First, Report JSON First 원칙을 그대로 따른다. |
 | `05_REPORT_SCHEMA.md` | Composer 출력은 공식 Report JSON top-level key를 변경하지 않는다. |
 | `09_TEXT_TEMPLATE_RULES.md` | 현재 V1 템플릿 규칙의 후속 구조이며, LLM optional polish 제한을 유지한다. |
-| `data/skill_descriptions.json` | V1 Registry 기준이다. 현재 설명 필드를 사용하며, V2에서 `frames`, `report_hooks`, `quality_rules` 등을 품을 수 있다. |
-| `backend/engine/text_template.py` | 현재 Renderer 역할에 가깝고, 향후 Selector/Composer와 분리될 수 있다. |
-| `backend/engine/report_builder.py` | Composer 결과를 Report JSON에 조립하는 경계를 유지한다. |
+| `15_CAREER_PATTERN_LIBRARY.md` | Interpretation Layer 기준이다. Composer는 이 문서의 output만 조합한다. |
+| `data/skill_descriptions.json` | Skill Registry = Knowledge Layer 기준이다. 현재 설명 필드를 데이터로 제공한다. |
+| `backend/engine/text_template.py` | Text Template 역할에 가깝고, Composition Layer 결과를 문장으로 표면화한다. |
+| `backend/engine/report_builder.py` | Report Builder = Assembly Layer로서 Composer 결과를 Report JSON에 조립하는 경계를 유지한다. |
 
 ---
 

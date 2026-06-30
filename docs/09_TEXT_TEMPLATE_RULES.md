@@ -11,13 +11,27 @@ LLM은 이 템플릿 결과를 **윤색만** 가능. 내용 변경 불가. (`00_
 
 ## 0. 책임 경계
 
+Narrative 생성 흐름은 모든 문서에서 아래 순서로 고정한다.
+
+```
+Evidence -> Evidence Mapping -> Skill Registry -> Career Pattern Library
+  -> Narrative Composer -> Text Template -> Report Builder -> Report JSON
+```
+
+| Layer | 책임 |
+|-------|------|
+| Skill Registry = Knowledge Layer | Skill별 설명 데이터 제공 |
+| Career Pattern Library = Interpretation Layer | Evidence/Skill 조합을 Career Story로 해석 |
+| Narrative Composer = Composition Layer | Pattern Library가 만든 해석 신호를 기존 Report JSON narrative 위치로 조합 |
+| Report Builder = Assembly Layer | `05_REPORT_SCHEMA.md`의 공식 Report JSON 조립 |
+
 | 책임 | 소유 모듈 | 설명 |
 |------|-----------|------|
 | `strengths[].headline` | `strength_selector.py` | 스킬/직무 맥락/근거 수를 담은 짧은 결정론 문장 |
 | `gaps[].reason` | `gap_analyzer.py` | match_level, 대표 evidence, confidence를 담은 짧은 결정론 문장 |
 | `gaps[].recommendation_hint` | `gap_analyzer.py` | gap별 Evidence 공백을 설명하는 짧은 hint 문장 |
-| `summary`, `skill_explanations`, `skill_narratives` | `text_template.py` | 리포트 요약, 스킬별 의미 설명, 커리어 내러티브 문장 생성 |
-| Narrative Composer | `14_NARRATIVE_COMPOSER_ARCHITECTURE.md` | 향후 Skill Intelligence Registry → block selector → composer → renderer 책임 분리 기준 |
+| `summary`, `skill_explanations`, `skill_narratives` | `text_template.py` | Composition Layer 결과를 템플릿 문장으로 표면화 |
+| Narrative Composer | `14_NARRATIVE_COMPOSER_ARCHITECTURE.md` | Career Pattern Library의 해석 신호를 Report JSON narrative 위치로 조합 |
 | LLM | optional polish | 템플릿 결과의 윤색만 허용. 필드, 점수, 항목, 순서 변경 금지 |
 
 ---
@@ -145,9 +159,9 @@ GAP_SEVERITY_LABELS = {
 
 ## 7. 스킬 설명 (`skill_explanations`)
 
-Day 12는 Action Recommendation이 아니라 Skill Intelligence Layer다.
-`text_template.py`는 Evidence, strength, gap을 변경하지 않고 각 스킬이 사용자의 커리어와 대표 프로필 시장에서
-어떤 의미를 갖는지 설명한다.
+Day 12는 Action Recommendation이 아니라 Composition Layer다.
+`text_template.py`는 Evidence, strength, gap을 변경하지 않고, Narrative Composer가 조합한 해석을 각 스킬의
+career/market/development 문장으로 표면화한다.
 
 ```json
 {
@@ -184,8 +198,9 @@ SKILL_EXPLANATION_TEMPLATES = {
 
 ## 8. 커리어 내러티브 (`skill_narratives`)
 
-Day 12 Narrative Template Layer는 `skill_explanations`를 바탕으로 리포트 후반부의 읽히는 문단을 만든다.
-이는 단계별 행동 계획이 아니라 career/market/development/job outlook/final assessment를 연결하는 설명 레이어다.
+Day 12 Composition Layer는 Career Pattern Library의 해석 신호와 `skill_explanations`를 바탕으로 리포트 후반부의
+읽히는 문단을 만든다. 이는 단계별 행동 계획이 아니라 career/market/development/job outlook/final assessment를
+연결하는 설명 레이어다.
 
 ```json
 {
@@ -225,12 +240,12 @@ LLM은 선택적 윤색만 가능하고, 판단 등급·점수·Evidence 참조�
 
 ## 9.1 Deprecated Legacy Planning Fields
 
-아래 필드는 Day 12 실행 계획 초안의 잔재이며 V1 Skill Intelligence Layer에서는 생성하지 않는다.
+아래 필드는 Day 12 실행 계획 초안의 잔재이며 Composition Layer에서는 생성하지 않는다.
 
 | 필드 | 처리 |
 |------|------|
-| `recommendations` | optional deprecated. 새 Day 12 구현의 기준이 아님 |
-| `roadmap` | optional deprecated. 새 Day 12 구현의 기준이 아님 |
+| `recommendations` | optional deprecated. Composition Layer 구현의 기준이 아님 |
+| `roadmap` | optional deprecated. Composition Layer 구현의 기준이 아님 |
 | `difficulty` | deprecated. 난이도 추정은 설명 레이어 범위가 아님 |
 | `expected_score_gain` | deprecated. 예상 점수 상승값은 생성하지 않음 |
 | `time_estimate` | deprecated. 기간 추정은 생성하지 않음 |
@@ -281,5 +296,5 @@ def polish_text(template_text: str) -> str:
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| Skill Intelligence Registry가 얕으면 스킬 설명이 일반적으로 보일 수 있음 | narrative 품질 저하 | `14_NARRATIVE_COMPOSER_ARCHITECTURE.md`의 frames/report_hooks/quality_rules로 확장 |
+| Skill Registry가 얕으면 스킬 설명이 일반적으로 보일 수 있음 | narrative 품질 저하 | Pattern 해석은 `15_CAREER_PATTERN_LIBRARY.md`, Composer 조합은 `14_NARRATIVE_COMPOSER_ARCHITECTURE.md` 기준으로 확장 |
 | LOW warning이 반복적으로 보이면 사용자 불안이 커질 수 있음 | 리포트 신뢰 저하 | 경고는 1회 명확히 표시하고, 나머지는 Evidence 공백 설명으로 연결 |

@@ -21,6 +21,29 @@
 
 ---
 
+## 0.1 Narrative Layer 기준
+
+Report JSON은 다음 4-Layer 책임 경계의 최종 산출물이다.
+
+| Layer | 책임 |
+|-------|------|
+| Skill Registry = Knowledge Layer | Skill별 설명 데이터 제공 |
+| Career Pattern Library = Interpretation Layer | Evidence/Skill 조합을 Career Story로 해석 |
+| Narrative Composer = Composition Layer | Pattern Library가 만든 해석 신호를 기존 Report JSON narrative 위치로 조합 |
+| Report Builder = Assembly Layer | 이 문서의 공식 Report JSON 조립 |
+
+Narrative 생성 흐름은 아래 순서로 고정한다.
+
+```
+Evidence -> Evidence Mapping -> Skill Registry -> Career Pattern Library
+  -> Narrative Composer -> Text Template -> Report Builder -> Report JSON
+```
+
+Career Pattern Library는 새 top-level key를 요구하지 않는다. Pattern 해석은 Composition Layer와 Text Template을
+거쳐 기존 `summary`, `skill_explanations`, `skill_narratives` 안에 반영된다.
+
+---
+
 ## 전체 구조 (Top-level Keys)
 
 ```json
@@ -484,9 +507,9 @@ gap별 후속 행동을 안내하는 짧은 템플릿 문구다.
 
 ## 10~11. `skill_explanations`, `skill_narratives`
 
-Day 12 Skill Intelligence + Narrative Template Layer. 이 섹션은 Evidence, match, score, strength, gap을
-변경하지 않고 사람이 읽고 공감할 수 있는 커리어 설명을 생성한다. 참조하는 `skill_key`/`weight`/`is_core`는 모두
-§4의 `primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
+이 섹션은 Composition Layer 결과다. Career Pattern Library가 만든 해석 신호와 Skill Registry의 설명 데이터를
+조합하되, Evidence, match, score, strength, gap을 변경하지 않는다. 참조하는 `skill_key`/`weight`/`is_core`는
+모두 §4의 `primary_profile` 기준 `unique_requirements`/`common_requirements`에서 가져온다.
 
 `09_TEXT_TEMPLATE_RULES.md`의 템플릿에서 `{job_family_ko}` 같은 단일 라벨 변수는
 v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES.md` 참조).
@@ -528,12 +551,12 @@ v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES
 
 **Narrative Composer V1 매핑**
 
-`docs/14_NARRATIVE_COMPOSER_ARCHITECTURE.md`의 V1 Composer는 중간 Engine Output을 생성하되,
-새 Report JSON top-level key를 만들지 않는다.
+`docs/14_NARRATIVE_COMPOSER_ARCHITECTURE.md`의 Narrative Composer는 Career Pattern Library가 만든
+Interpretation Layer 결과를 조합하되, 새 Report JSON top-level key를 만들지 않는다.
 
 | Composer output | Report JSON 위치 |
 |-----------------|------------------|
-| `executive_summary` | `summary.one_line` 또는 `summary` 내부 narrative 필드 |
+| `executive_summary` | `summary.one_line` |
 | `strength_narratives` | `skill_explanations[]` 중 `source="strength"` 항목 |
 | `gap_narratives` | `skill_explanations[]` 중 `source="gap"` 항목 |
 | `skill_explanations` | `skill_explanations[]` |

@@ -10,6 +10,26 @@
 
 ---
 
+## 0. Narrative Layer 기준
+
+Payload 계약은 다음 4-Layer 책임 경계를 따른다.
+
+| Layer | 책임 |
+|-------|------|
+| Skill Registry = Knowledge Layer | Skill별 설명 데이터 제공 |
+| Career Pattern Library = Interpretation Layer | Evidence/Skill 조합을 Career Story로 해석 |
+| Narrative Composer = Composition Layer | Pattern Library가 만든 해석 신호를 기존 Report JSON narrative 위치로 조합 |
+| Report Builder = Assembly Layer | `05_REPORT_SCHEMA.md`의 공식 Report JSON 조립 |
+
+Narrative 생성 흐름은 모든 문서에서 아래 순서로 고정한다.
+
+```
+Evidence -> Evidence Mapping -> Skill Registry -> Career Pattern Library
+  -> Narrative Composer -> Text Template -> Report Builder -> Report JSON
+```
+
+---
+
 ## 1. Frontend → Backend
 
 ### POST /reports (리포트 생성 요청)
@@ -257,8 +277,8 @@
 | `selected_requirements` | array | `primary_profile`의 65/35 requirement. `requirement_matches`, `score_breakdown` 계산의 기준 |
 | `confidence_total` (기존 유지) | number | `requirement_matches[]`의 동일 skill_key에 매핑된 모든 evidence의 confidence_score 합 |
 | `gaps` | array | v1.5 gap schema. `rank`, `skill_key`, `label_ko`, `severity`, `match_level`, `gap_score`, `reason`, `recommendation_hint` 포함 |
-| `skill_explanations` | array | Day 12 Skill Intelligence Layer. Evidence/strength/gap을 바꾸지 않고 skill별 career/market/development 설명 생성 |
-| `skill_narratives` | object | Day 12 Narrative Template Layer. `career_context`, `market_context`, `development_direction`, `job_outlook`, `final_assessment` 포함 |
+| `skill_explanations` | array | Composition Layer 결과. Pattern 해석과 Skill 설명을 Evidence/strength/gap 변경 없이 skill별 career/market/development 설명으로 조합 |
+| `skill_narratives` | object | Composition Layer 결과. Pattern Library가 만든 해석 신호를 `career_context`, `market_context`, `development_direction`, `job_outlook`, `final_assessment`로 조합 |
 
 **Skill explanation schema**
 
@@ -287,7 +307,7 @@
 |------|------|
 | `recommendations` | Day 12 핵심 계약에서 제외. 과거 실행 계획 초안 호환용으로만 optional deprecated |
 | `roadmap` | Day 12 핵심 계약에서 제외. 과거 단계별 계획 초안 호환용으로만 optional deprecated |
-| `difficulty` | deprecated. Skill Intelligence Layer에서 생성하지 않음 |
+| `difficulty` | deprecated. Composition Layer에서 생성하지 않음 |
 | `expected_score_gain` | deprecated. 점수 개선폭 추정은 V1 설명 레이어 범위가 아님 |
 | `time_estimate` | deprecated. 기간 추정은 V1 설명 레이어 범위가 아님 |
 

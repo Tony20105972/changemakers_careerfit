@@ -26,18 +26,37 @@ Week 2 — Engine Week
     - backend/engine/requirement_matcher.py (primary_profile requirements 기준 매칭)
     - backend/engine/scoring_engine.py (primary_profile 65/35 기반 점수)
     - backend/engine/gap_analyzer.py, backend/engine/strength_selector.py
-    - backend/engine/text_template.py (Skill Intelligence narrative)
-    - backend/engine/report_builder.py (05_REPORT_SCHEMA.md 12개 top-level key 조립)
+    - Skill Registry = Knowledge Layer (data/skill_descriptions.json)
+    - Career Pattern Library = Interpretation Layer (docs/15 기준, Pattern 해석 신호)
+    - Narrative Composer = Composition Layer (Pattern 해석 신호를 narrative 위치로 조합)
+    - backend/engine/text_template.py (Composition Layer 결과를 템플릿 문장으로 표면화)
+    - Report Builder = Assembly Layer (05_REPORT_SCHEMA.md 12개 top-level key 조립)
     - scripts/generate_report.py (fixture → Report JSON CLI)
   검증: 결정론적 재현, 손작성 fixture와 구조 100% 일치
 
 Week 3 — Product Week
-  목표: Skill Intelligence Template → HTML → PDF → API → DB → React → Deploy
+  목표: Narrative Pipeline → HTML → PDF → API → DB → React → Deploy
   산출물: 실제 URL에서 사용자 입력 → PDF 다운로드 전체 플로우
           (Primary Profile Selection, LOW warning, source_profiles 보조 배지 포함)
           Day 12는 실행 계획 생성이 아니라 Evidence 기반 career narrative layer 구현
-          Narrative Composer 설계 기준은 `14_NARRATIVE_COMPOSER_ARCHITECTURE.md`를 따른다.
+          Pattern 해석은 `15_CAREER_PATTERN_LIBRARY.md`, Composer 조합은 `14_NARRATIVE_COMPOSER_ARCHITECTURE.md`를 따른다.
 ```
+
+---
+
+## Narrative Pipeline 기준
+
+```
+Evidence -> Evidence Mapping -> Skill Registry -> Career Pattern Library
+  -> Narrative Composer -> Text Template -> Report Builder -> Report JSON
+```
+
+| Layer | 책임 |
+|-------|------|
+| Skill Registry = Knowledge Layer | Skill별 설명 데이터 제공 |
+| Career Pattern Library = Interpretation Layer | Evidence/Skill 조합을 Career Story로 해석 |
+| Narrative Composer = Composition Layer | Pattern Library가 만든 해석 신호를 기존 Report JSON narrative 위치로 조합 |
+| Report Builder = Assembly Layer | `05_REPORT_SCHEMA.md`의 공식 Report JSON 조립 |
 
 ---
 
@@ -64,7 +83,10 @@ Week 3 — Product Week
 | 백엔드 | FastAPI (Python) |
 | 엔진 | Python (순수 함수, DB/API 의존성 없음) |
 | **프로필 선택 모듈 (v3.1 신규)** | `backend/engine/profile_selector.py` (primary_profile/fallback 선택, 외부 ML 모델 없음) |
-| **Skill Intelligence Layer (Day 12)** | `backend/engine/text_template.py` + `data/skill_descriptions.json` (Evidence 변경 없이 skill_explanations/skill_narratives 생성) |
+| **Knowledge Layer** | Skill Registry (`data/skill_descriptions.json`) |
+| **Interpretation Layer** | Career Pattern Library (`docs/15_CAREER_PATTERN_LIBRARY.md` 기준) |
+| **Composition Layer (Day 12)** | Narrative Composer + `backend/engine/text_template.py` (Evidence 변경 없이 skill_explanations/skill_narratives 조합 및 표면화) |
+| **Assembly Layer** | Report Builder (`05_REPORT_SCHEMA.md` 12개 top-level key 조립) |
 | **Report Generator CLI (Day 13)** | `scripts/generate_report.py` (fixture → Report JSON 저장, API Layer 아님) |
 | PDF | Jinja2 + Playwright |
 | 프론트엔드 | React + TypeScript |

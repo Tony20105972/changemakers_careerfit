@@ -74,7 +74,7 @@ v3.1에서 모든 입력은 `primary_profile`을 선택하고 report_json을 생
 
 ## Day 8 — profile_selector.py (v3.1 핵심 신규)
 
-### 작업: `scripts/profile_selector.py`
+### 작업: `backend/engine/profile_selector.py`
 
 `06_SCORING_RULES.md` §2.5~2.6의 모든 함수를 구현한다.
 
@@ -90,9 +90,7 @@ build_warning_message(confidence_level) -> str | None
 ### 단위 테스트 (수작업 케이스로 검증)
 
 ```bash
-python scripts/profile_selector.py \
-  --user_vector '{"recruiting": 1.9, "training_and_onboarding": 1.85, "payroll": 1.9}' \
-  --profile_pool data/
+python3 backend/engine/profile_selector.py
 
 # 예상 출력:
 # primary_profile = "hr"
@@ -116,7 +114,7 @@ python scripts/profile_selector.py \
 
 ## Day 9 — Evidence Extractor (듀얼 소스)
 
-### 작업: `engine/evidence_extractor.py`
+### 작업: `backend/engine/evidence_extractor.py`
 
 ```python
 def extract_evidences_from_all_sources(
@@ -141,7 +139,7 @@ def extract_evidences_from_all_sources(
 
 ## Day 10 — Requirement Matcher + Scoring (primary_profile 기반)
 
-### 작업: `engine/requirement_matcher.py`, `engine/scoring_engine.py`
+### 작업: `backend/engine/requirement_matcher.py`, `backend/engine/scoring_engine.py`
 
 ```python
 def match_requirements(evidences, selected_requirements) -> list[RequirementMatch]:
@@ -166,7 +164,7 @@ def calculate_score(matches, selected_requirements) -> ScoreResult:
 
 ## Day 11 — Gap Analyzer + Strength Selector
 
-### 작업: `engine/gap_analyzer.py`, `engine/strength_selector.py`
+### 작업: `backend/engine/gap_analyzer.py`, `backend/engine/strength_selector.py`
 
 ```python
 def analyze_gaps(matches, selected_requirements) -> list[Gap]:
@@ -189,10 +187,11 @@ def select_strengths(matches, selected_requirements) -> list[Strength]:
 
 ## Day 12 — Skill Intelligence + Narrative Template Layer
 
-### 작업: `engine/text_template.py`
+### 작업: `backend/engine/text_template.py`, `data/skill_descriptions.json`
 
 `09_TEXT_TEMPLATE_RULES.md` §1~9 전체 구현. Day 12는 Evidence를 바꾸는 작업이 아니라,
 이미 계산된 Evidence/strength/gap/score를 사람이 읽고 공감할 수 있는 Career Narrative로 설명하는 레이어다.
+향후 Composer 책임 분리는 `14_NARRATIVE_COMPOSER_ARCHITECTURE.md`를 기준으로 한다.
 
 ```python
 build_primary_profile_summary(primary_profile, secondary_profiles, confidence_level) -> str
@@ -215,7 +214,7 @@ polish_text(template_text) -> str  # LLM 폴백 구조 포함
 [ ] LLM 없이 모든 텍스트 필드 채워짐 (폴백 동작)
 [ ] LLM은 선택적 윤색만 수행하고 score/Evidence/strength/gap/순서 변경 없음
 [ ] Evidence 모델 변경 없음
-[ ] expected_score_gain/difficulty/time_estimate 생성 없음
+[ ] deprecated planning fields(`expected_score_gain`, `difficulty`, `time_estimate`) 생성 없음
 [ ] priority_clause: target_priority_text 유래 강점에만 추가
 ```
 
@@ -223,28 +222,40 @@ polish_text(template_text) -> str  # LLM 폴백 구조 포함
 
 ## Day 13 — Report Builder (12 top-level keys 조립)
 
-### 작업: `engine/report_builder.py`
+### 작업: `backend/engine/report_builder.py`, `scripts/generate_report.py`
 
 ```python
 def build_report(
-    report_id, target_priority_text,
-    evidences, user_vector, primary_profile, secondary_profiles, selected_requirements,
-    matches, score, gaps, strengths, skill_explanations, skill_narratives,
-    weight_source="MANUAL_V1"
+    *,
+    primary_profile,
+    secondary_profiles,
+    confidence_level,
+    warning_message,
+    evidenceMapping,
+    scores,
+    strengths,
+    gaps,
+    executive_summary,
+    skill_explanations,
+    skill_narratives,
+    careerProfile,
+    targetJobAnalysis,
+    skillMapping,
+    reportSections,
 ) -> dict:
     return {
-        "meta": build_meta(report_id, primary_profile, secondary_profiles, weight_source, confidence_level),
-        "summary": build_summary(score, matches, primary_profile, ...),
-        "careerProfile": build_career_profile(career_histories, evidences),
-        "targetJobAnalysis": build_target_job(primary_profile, selected_requirements, matches),
-        "skillMapping": build_skill_mapping(matches, selected_requirements),
-        "evidenceMapping": build_evidence_mapping(evidences),
-        "scores": score.dict(),
-        "strengths": [s.dict() for s in strengths],
-        "gaps": [g.dict() for g in gaps],
+        "meta": build_meta(primary_profile, secondary_profiles, confidence_level, warning_message),
+        "summary": executive_summary,
+        "careerProfile": careerProfile,
+        "targetJobAnalysis": targetJobAnalysis,
+        "skillMapping": skillMapping,
+        "evidenceMapping": evidenceMapping,
+        "scores": scores,
+        "strengths": strengths,
+        "gaps": gaps,
         "skill_explanations": skill_explanations,
         "skill_narratives": skill_narratives,
-        "reportSections": DEFAULT_12_SECTIONS,
+        "reportSections": reportSections,
     }
 ```
 
@@ -257,7 +268,8 @@ def build_report(
 [ ] evidenceMapping에 source="target_priority_text" 항목 포함
 [ ] summary.primary_profile_summary, LOW warning 정확
 [ ] skill_explanations/skill_narratives 포함
-[ ] recommendations/roadmap/expected_score_gain/difficulty/time_estimate 미생성
+[ ] deprecated planning fields(`recommendations`, `roadmap`, `expected_score_gain`, `difficulty`, `time_estimate`) 미생성
+[ ] CLI: `python3 scripts/generate_report.py --fixture hr_dominant --output output/debug_hr.json` 실행 성공
 ```
 
 ---
@@ -469,7 +481,7 @@ FRONTEND_URL (CORS)
 | evidence 소스 | `career_histories`만 | `career_histories` + `target_priority_text` (듀얼) |
 | DB | `job_requirement_stats(job_family ENUM)` | `job_requirement_profiles(profile_key TEXT)` |
 | ERD | `reports.target_job_family` ENUM | `reports.primary_profile` TEXT |
-| 신규 엔진 모듈 | 없음 | `scripts/profile_selector.py` |
+| 신규 엔진 모듈 | 없음 | `backend/engine/profile_selector.py` |
 | sample fixture | HR, Data 각 1종 | HR dominant, MIXED 각 1종 |
 
 ---
@@ -494,5 +506,5 @@ FRONTEND_URL (CORS)
 | 문제 | 영향 | 비고 |
 |------|------|------|
 | Day 8(profile_selector.py)이 Week 2의 모든 후속 모듈의 선행 조건 | Day 8에서 막히면 Day 9~13이 연쇄 지연 | 선택 알고리즘은 순수 산술/규칙 기반이라 빠른 구현 가능 |
-| MIXED 케이스 sample_report가 보조 프로필 설명을 포함 | Day 7 작성 기준 혼동 가능 | 점수/갭/추천은 primary_profile 기준임을 고정 |
+| MIXED 케이스 sample_report가 보조 프로필 설명을 포함 | Day 7 작성 기준 혼동 가능 | 점수/갭/서사는 primary_profile 기준임을 고정 |
 | LOW 케이스도 PDF까지 생성 | 부정확한 결과 과신 가능 | warning_message 필수 표시 |

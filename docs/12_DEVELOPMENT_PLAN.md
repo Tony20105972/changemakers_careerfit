@@ -21,19 +21,22 @@ Week 1 — Architecture Week  (Day 1~5 완료, Day 6~7 잔여)
 Week 2 — Engine Week
   목표: profile_selector.py + 5개 엔진 모듈 → report.json 자동 생성
   산출물:
-    - scripts/profile_selector.py (select_primary_profile, fallback_profile, confidence_level)
-    - engine/evidence_extractor.py (career_histories + target_priority_text 듀얼 소스)
-    - engine/requirement_matcher.py (selected_requirements 기준 매칭)
-    - engine/scoring_engine.py (primary_profile 65/35 기반 점수)
-    - engine/gap_analyzer.py, engine/strength_selector.py
-    - engine/report_builder.py (primary_profile, confidence_level, warning_message 포함)
+    - backend/engine/profile_selector.py (primary_profile, fallback, confidence_level)
+    - backend/engine/evidence_extractor.py (career_histories + target_priority_text 듀얼 소스)
+    - backend/engine/requirement_matcher.py (primary_profile requirements 기준 매칭)
+    - backend/engine/scoring_engine.py (primary_profile 65/35 기반 점수)
+    - backend/engine/gap_analyzer.py, backend/engine/strength_selector.py
+    - backend/engine/text_template.py (Skill Intelligence narrative)
+    - backend/engine/report_builder.py (05_REPORT_SCHEMA.md 12개 top-level key 조립)
+    - scripts/generate_report.py (fixture → Report JSON CLI)
   검증: 결정론적 재현, 손작성 fixture와 구조 100% 일치
 
 Week 3 — Product Week
   목표: Skill Intelligence Template → HTML → PDF → API → DB → React → Deploy
   산출물: 실제 URL에서 사용자 입력 → PDF 다운로드 전체 플로우
           (Primary Profile Selection, LOW warning, source_profiles 보조 배지 포함)
-          Day 12는 action recommendation이 아니라 Evidence 기반 career narrative layer 구현
+          Day 12는 실행 계획 생성이 아니라 Evidence 기반 career narrative layer 구현
+          Narrative Composer 설계 기준은 `14_NARRATIVE_COMPOSER_ARCHITECTURE.md`를 따른다.
 ```
 
 ---
@@ -60,8 +63,9 @@ Week 3 — Product Week
 | DB | PostgreSQL (Supabase) |
 | 백엔드 | FastAPI (Python) |
 | 엔진 | Python (순수 함수, DB/API 의존성 없음) |
-| **프로필 선택 모듈 (v3.1 신규)** | `scripts/profile_selector.py` (primary_profile/fallback 선택, 외부 ML 모델 없음) |
-| **Skill Intelligence Layer (Day 12)** | `engine/text_template.py` (Evidence 변경 없이 skill_explanations/skill_narratives 생성) |
+| **프로필 선택 모듈 (v3.1 신규)** | `backend/engine/profile_selector.py` (primary_profile/fallback 선택, 외부 ML 모델 없음) |
+| **Skill Intelligence Layer (Day 12)** | `backend/engine/text_template.py` + `data/skill_descriptions.json` (Evidence 변경 없이 skill_explanations/skill_narratives 생성) |
+| **Report Generator CLI (Day 13)** | `scripts/generate_report.py` (fixture → Report JSON 저장, API Layer 아님) |
 | PDF | Jinja2 + Playwright |
 | 프론트엔드 | React + TypeScript |
 | 배포 | Vercel (frontend) / Render (backend) |
@@ -92,7 +96,7 @@ sales, design, finance, engineering, customer_success
 - `synthesize_requirements()` (즉석 합성) — 검증 불가 코드 경로 제거
 - 분석 차단 상태 enum 또는 차단형 422 구현
 - Day 12에서 Evidence 모델 변경 또는 새 Evidence 생성
-- Day 12에서 `expected_score_gain`, `difficulty`, `time_estimate` 기반 action recommendation 생성 금지
+- Day 12에서 `expected_score_gain`, `difficulty`, `time_estimate` 기반 실행 계획 생성 금지
 
 ---
 
@@ -107,6 +111,6 @@ sales, design, finance, engineering, customer_success
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| fallback `operations`가 LOW 입력에서 과대표현될 수 있음 | 사용자 의도와 불일치 가능 | LOW warning과 추가 입력 권장 필수 |
+| fallback `operations`가 LOW 입력에서 과대표현될 수 있음 | 사용자 의도와 불일치 가능 | LOW warning과 Evidence 공백 설명 필수 |
 | secondary_profiles 표시가 혼란을 줄 수 있음 | 대표 판단이 흐려질 수 있음 | 사용자-facing 핵심은 primary_profile로 제한 |
 | Week 2 엔진 작업은 profile selector가 선행 조건 | Day 8에서 막히면 Day 9~13이 지연 | profile_selector.py를 Day 8에 먼저 완성하고 나머지 모듈이 이를 임포트 |

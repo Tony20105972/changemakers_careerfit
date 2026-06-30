@@ -5,7 +5,7 @@
 
 > **v3.1 핵심 변경:** `target_job_family` ENUM 제거 유지. `target_priority_text`(자유 텍스트) 추가.  
 > Algorithm Response는 사용자-facing 기준으로 `primary_profile`, `secondary_profiles`, `confidence_level`을 반환한다.  
-> `profile_blend`는 V1에서 필수 계약이 아니며, 필요 시 내부 디버그 값으로만 둔다.
+> Deprecated/removed: `profile_blend` 계열 필드는 V1 사용자-facing 계약에서 제거되며, 필요 시 내부 디버그 값으로만 둔다.
 > **Schema-First 원칙:** 이 문서는 `05_REPORT_SCHEMA.md`, `03_ERD.md`보다 먼저 확정된다.
 
 ---
@@ -220,7 +220,7 @@
       "match_level": "NONE",
       "gap_score": 0.65,
       "reason": "노동법 관련 경험이 확인되지 않음. 대표 근거가 없어 match_score 0.00 기준으로 결핍 판단했습니다.",
-      "recommendation_hint": "노동법 관련 프로젝트 또는 자격 취득 검토 권장"
+      "recommendation_hint": "노동법 관련 경험 서술 또는 제도 적용 근거 확인 필요"
     }
   ],
   "skill_explanations": [
@@ -277,22 +277,22 @@
 |------|------|------|
 | `career_context` | string | 전체 Evidence/strength/gap을 커리어 맥락으로 해석한 문단 |
 | `market_context` | string | `primary_profile` 요구사항 기준 시장/직무 맥락 문단 |
-| `development_direction` | string | action list가 아닌 성장 방향 문단 |
+| `development_direction` | string | 실행 목록이 아닌 성장 방향 문단 |
 | `job_outlook` | string | 현재 적합도와 보완 포인트를 바탕으로 한 직무 전망 문단 |
 | `final_assessment` | string | 점수와 Evidence를 변경하지 않는 최종 평가 문단 |
 
-**Deprecated action recommendation fields**
+**Deprecated legacy planning fields**
 
 | 필드 | 처리 |
 |------|------|
-| `recommendations` | Day 12 핵심 계약에서 제외. 과거 action recommendation 초안 호환용으로만 optional deprecated |
-| `roadmap` | Day 12 핵심 계약에서 제외. 과거 action roadmap 초안 호환용으로만 optional deprecated |
+| `recommendations` | Day 12 핵심 계약에서 제외. 과거 실행 계획 초안 호환용으로만 optional deprecated |
+| `roadmap` | Day 12 핵심 계약에서 제외. 과거 단계별 계획 초안 호환용으로만 optional deprecated |
 | `difficulty` | deprecated. Skill Intelligence Layer에서 생성하지 않음 |
 | `expected_score_gain` | deprecated. 점수 개선폭 추정은 V1 설명 레이어 범위가 아님 |
 | `time_estimate` | deprecated. 기간 추정은 V1 설명 레이어 범위가 아님 |
 
-> `profile_blend`, `blended_requirements`, `blend_display_mode`, `blend_description`은 V1 사용자-facing 계약에서 제거된다.  
-> 디버깅이 필요하면 `report_json.internal_debug.profile_blend`처럼 optional 내부 필드로만 허용한다.
+> Deprecated/removed: `profile_blend`, `blended_requirements`, `blend_display_mode`, `blend_description`은 V1 사용자-facing 계약에서 제거된다.  
+> 디버깅이 필요하면 API/화면 응답이 아닌 내부 로그 또는 별도 debug payload에서만 허용한다.
 
 ---
 

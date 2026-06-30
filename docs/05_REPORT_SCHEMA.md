@@ -42,7 +42,7 @@
 
 > `marketAnalysis`는 V1.1에서 추가 예정 (트랙 2 — 사람인/워크넷 배치 데이터 연동 시).  
 > V1에서는 12개 top-level key로 구성된다. (변경 없음)
-> `recommendations`, `roadmap`은 Day 12 action recommendation 초안에서 사용하던 이름이며, V1 Day 12 핵심 스키마에서는 deprecated이다.
+> `recommendations`, `roadmap`은 Day 12 실행 계획 초안에서 사용하던 이름이며, V1 Day 12 핵심 스키마에서는 deprecated이다.
 
 ---
 
@@ -82,7 +82,7 @@
 | **`evidence_count`** | integer | **v3.1 신규.** 추출된 evidence 총 개수 |
 | **`warning_message`** | string \| null | **v3.1 신규.** LOW에서는 required. "입력 정보가 부족하여 일부 결과는 추정에 기반합니다" 문구 포함 |
 
-> `profile_blend`는 V1 사용자-facing 핵심 필드에서 제거된다. 필요 시 `internal_debug.profile_blend` optional 필드로만 저장한다.
+> Deprecated/removed: `profile_blend` 계열 필드는 V1 사용자-facing 핵심 필드에서 제거된다. 필요 시 API/화면 응답이 아닌 내부 debug payload에서만 다룬다.
 
 **PDF 렌더링 위치:** Section 1 (표지) — `report_id`, `generated_at`, `weight_source`(작은 글씨로 데이터 근거 표기)
 
@@ -444,7 +444,7 @@ gap별 후속 행동을 안내하는 짧은 템플릿 문구다.
       "match_level": "NONE",
       "gap_score": 0.65,
       "reason": "노동법 관련 경험이 확인되지 않음. 대표 근거가 없어 match_score 0.00 기준으로 결핍 판단했습니다.",
-      "recommendation_hint": "노동법 관련 프로젝트 또는 자격 취득 검토 권장"
+      "recommendation_hint": "노동법 관련 경험 서술 또는 제도 적용 근거 확인 필요"
     }
   ]
 }
@@ -459,7 +459,7 @@ gap별 후속 행동을 안내하는 짧은 템플릿 문구다.
 | `match_level` | enum | gap 판단에 사용된 match level. 후보는 `NONE \| WEAK \| PARTIAL` |
 | `gap_score` | number | 결여도 factor(`NONE=1.0`, `WEAK=0.75`, `PARTIAL=0.5`) × skill_type weight |
 | `reason` | string | match_level, 대표 evidence 여부, match_score를 포함한 템플릿 기반 설명 |
-| `recommendation_hint` | string | 해당 skill 보강을 위한 프로젝트/자격 검토 안내 문구 |
+| `recommendation_hint` | string | 해당 skill의 Evidence 공백을 읽기 위한 짧은 해석 힌트. 실행 계획이나 예상 개선폭이 아님 |
 
 **Gap 후보/정렬 규칙**
 
@@ -522,13 +522,13 @@ v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES
 | `skill_explanations[].development_direction` | string | 실행 계획이 아닌 설명 방향. Evidence 추가/변경 없이 보완 관점을 제시 |
 | `skill_narratives.career_context` | string | 전체 Evidence/strength/gap을 커리어 맥락으로 해석한 문단 |
 | `skill_narratives.market_context` | string | `primary_profile` 요구사항 기준 시장/직무 맥락 문단 |
-| `skill_narratives.development_direction` | string | action list가 아닌 성장 방향 문단 |
+| `skill_narratives.development_direction` | string | 실행 목록이 아닌 성장 방향 문단 |
 | `skill_narratives.job_outlook` | string | 현재 적합도와 보완 포인트를 바탕으로 한 직무 전망 문단 |
 | `skill_narratives.final_assessment` | string | 점수와 Evidence를 변경하지 않는 최종 평가 문단 |
 
 **Deprecated**
 
-`recommendations`, `roadmap`, `difficulty`, `expected_score_gain`, `time_estimate`는 Day 12 action recommendation 초안의 잔재다.
+`recommendations`, `roadmap`, `difficulty`, `expected_score_gain`, `time_estimate`는 Day 12 실행 계획 초안의 잔재다.
 V1 Day 12 구현은 이 필드들을 생성하지 않는다.
 
 ---
@@ -606,4 +606,4 @@ print("구조 통일성 검증 통과")
 | LOW 리포트도 동일 구조를 사용함 | 점수는 산출되지만 신뢰도가 낮을 수 있음 | `meta.warning_message`를 화면/PDF에서 필수 표시 |
 | `source_profiles`가 2개 이상인 requirement의 "어느 프로필에서 왔는지" 표시가 사용자에게 큰 의미가 없을 수 있음 | UI 복잡도 증가 대비 가치가 작을 가능성 | V1에서는 보조 배지로만 표시 |
 | `meta.confidence_level == LOW`인 리포트도 `summary.fit_level`을 동일한 4단계로 표시함 | "낮은 신뢰도"와 "낮은 점수(LOW_FIT)"가 시각적으로 혼동될 위험 | `02_USER_FLOW.md`의 신뢰도 배너가 `fit_level` 표시와 명확히 분리되어야 함 |
-| fallback으로 `operations`가 선택된 LOW 리포트 | 사용자가 직무 판단을 과신할 수 있음 | `warning_message`와 추가 입력 권장 문구를 함께 표시 |
+| fallback으로 `operations`가 선택된 LOW 리포트 | 사용자가 직무 판단을 과신할 수 있음 | `warning_message`와 추가 입력 안내를 함께 표시 |

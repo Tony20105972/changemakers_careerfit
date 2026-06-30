@@ -15,8 +15,9 @@ LLM은 이 템플릿 결과를 **윤색만** 가능. 내용 변경 불가. (`00_
 |------|-----------|------|
 | `strengths[].headline` | `strength_selector.py` | 스킬/직무 맥락/근거 수를 담은 짧은 결정론 문장 |
 | `gaps[].reason` | `gap_analyzer.py` | match_level, 대표 evidence, confidence를 담은 짧은 결정론 문장 |
-| `gaps[].recommendation_hint` | `gap_analyzer.py` | gap별 후속 행동을 안내하는 짧은 hint 문장 |
+| `gaps[].recommendation_hint` | `gap_analyzer.py` | gap별 Evidence 공백을 설명하는 짧은 hint 문장 |
 | `summary`, `skill_explanations`, `skill_narratives` | `text_template.py` | 리포트 요약, 스킬별 의미 설명, 커리어 내러티브 문장 생성 |
+| Narrative Composer | `14_NARRATIVE_COMPOSER_ARCHITECTURE.md` | 향후 Skill Intelligence Registry → block selector → composer → renderer 책임 분리 기준 |
 | LLM | optional polish | 템플릿 결과의 윤색만 허용. 필드, 점수, 항목, 순서 변경 금지 |
 
 ---
@@ -79,7 +80,7 @@ LOW에서는 `meta.warning_message`에 위 문구 또는 같은 의미의 문구
 ```python
 SCORE_SPLIT_TEMPLATES = {
     "unique_high_common_high":  "{primary_profile_label_ko} 고유 역량({unique_score}/65점)과 범용 역량({common_score}/35점) 모두 우수한 수준입니다.",
-    "unique_high_common_low":   "{primary_profile_label_ko} 고유 역량({unique_score}/65점)은 우수하나, 협업·문서화 등 범용 역량({common_score}/35점)의 보완이 권장됩니다.",
+    "unique_high_common_low":   "{primary_profile_label_ko} 고유 역량({unique_score}/65점)은 우수하나, 협업·문서화 등 범용 역량({common_score}/35점)은 추가 설명 여지가 있습니다.",
     "unique_low_common_high":   "범용 역량({common_score}/35점)은 우수하나, {primary_profile_label_ko} 고유 역량({unique_score}/65점)의 확보가 우선적으로 필요합니다.",
     "unique_low_common_low":    "{primary_profile_label_ko} 고유 역량과 범용 역량 모두({unique_score}/65점, {common_score}/35점) 보완이 필요한 단계입니다.",
 }
@@ -136,7 +137,7 @@ GAP_SEVERITY_LABELS = {
 |------|-------------|
 | `severity` | `CRITICAL \| HIGH \| MEDIUM \| LOW` 표시 및 설명 강도 입력 |
 | `reason` | gap 카드/본문의 기본 설명. 엔진이 생성한 원문을 유지 |
-| `recommendation_hint` | gap 설명의 보조 재료. 완성 action recommendation 문장으로 간주하지 않음 |
+| `recommendation_hint` | gap 설명의 보조 재료. 실행 계획, 난이도, 기간, 예상 점수 상승으로 확장하지 않음 |
 | `gap_score` | 결핍 강도 표현 입력. 예상 개선폭 산정에는 사용하지 않음 |
 | `rank`, `skill_key`, `label_ko` | key_gaps, skill_explanations 연결 기준 |
 
@@ -200,7 +201,7 @@ Day 12 Narrative Template Layer는 `skill_explanations`를 바탕으로 리포�
 |------|-----------|
 | `career_context` | 상위 strengths와 gaps를 함께 읽어 사용자의 현재 커리어 서사를 설명 |
 | `market_context` | `primary_profile` requirement 기준으로 시장/직무 요구를 설명. 외부 실시간 API 사용 금지 |
-| `development_direction` | action list가 아니라 보완해야 할 설명 방향을 제시 |
+| `development_direction` | 실행 목록이 아니라 보완해야 할 설명 방향을 제시 |
 | `job_outlook` | `fit_level`, `unique_score`, `common_score`, 핵심 gap을 바탕으로 직무 전망을 설명 |
 | `final_assessment` | 점수와 Evidence를 변경하지 않는 최종 판단 문단 |
 
@@ -210,21 +211,21 @@ Day 12 Narrative Template Layer는 `skill_explanations`를 바탕으로 리포�
 
 ```python
 CONCLUSION_TEMPLATES = {
-    "EXCELLENT_FIT": "현재 역량 수준으로 {primary_profile_label_ko} 포지션 지원을 강력히 권장합니다.",
-    "GOOD_FIT":      "{key_gap_ko} 역량을 보강하면 {primary_profile_label_ko} 포지션에서 높은 경쟁력을 갖출 수 있습니다.",
-    "MODERATE_FIT":  "90일 로드맵에 따른 역량 보완 후 {primary_profile_label_ko} 포지션 지원을 권장합니다.",
-    "LOW_FIT":       "현재 단계에서는 고유 핵심 역량({unique_score}/65) 확보가 선행되어야 합니다. 6개월 이상의 준비 기간을 권장합니다.",
+    "EXCELLENT_FIT": "{primary_profile_label_ko} 기준에서 확인된 Evidence와 점수 구조가 매우 강하게 정렬되어 있습니다.",
+    "GOOD_FIT":      "{primary_profile_label_ko} 기준에서 강점 Evidence가 충분하며, {key_gap_ko} 영역은 설명 공백으로 남아 있습니다.",
+    "MODERATE_FIT":  "{primary_profile_label_ko} 기준에서 일부 핵심 Evidence는 확인되지만, 주요 gap이 최종 해석의 폭을 제한합니다.",
+    "LOW_FIT":       "현재 입력만으로는 {primary_profile_label_ko} 고유 핵심 역량({unique_score}/65)을 충분히 설명하기 어렵습니다.",
 }
 ```
 
-`final_assessment`는 독립 action recommendation이 아니며 `skill_narratives` 내부의 최종 평가 문단이다.
+`final_assessment`는 독립 실행 계획이 아니며 `skill_narratives` 내부의 최종 평가 문단이다.
 LLM은 선택적 윤색만 가능하고, 판단 등급·점수·Evidence 참조를 변경할 수 없다.
 
 ---
 
-## 9.1 Deprecated Action Recommendation Fields
+## 9.1 Deprecated Legacy Planning Fields
 
-아래 필드는 Day 12 action recommendation 초안의 잔재이며 V1 Skill Intelligence Layer에서는 생성하지 않는다.
+아래 필드는 Day 12 실행 계획 초안의 잔재이며 V1 Skill Intelligence Layer에서는 생성하지 않는다.
 
 | 필드 | 처리 |
 |------|------|
@@ -280,5 +281,5 @@ def polish_text(template_text: str) -> str:
 
 | 문제 | 영향 | 비고 |
 |------|------|------|
-| skill별 action template이 없으면 추천 문장이 일반적으로 보일 수 있음 | 추천 품질 저하 | `recommendation_hint`를 기본값으로 사용하고 template 확장 필요 |
-| LOW warning이 반복적으로 보이면 사용자 불안이 커질 수 있음 | 리포트 신뢰 저하 | 경고는 1회 명확히 표시하고, 나머지는 추가 입력 권장으로 연결 |
+| Skill Intelligence Registry가 얕으면 스킬 설명이 일반적으로 보일 수 있음 | narrative 품질 저하 | `14_NARRATIVE_COMPOSER_ARCHITECTURE.md`의 frames/report_hooks/quality_rules로 확장 |
+| LOW warning이 반복적으로 보이면 사용자 불안이 커질 수 있음 | 리포트 신뢰 저하 | 경고는 1회 명확히 표시하고, 나머지는 Evidence 공백 설명으로 연결 |

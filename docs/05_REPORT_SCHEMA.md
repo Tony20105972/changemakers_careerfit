@@ -526,6 +526,20 @@ v3.1에서 `{primary_profile_label_ko}`로 대체된다 (`09_TEXT_TEMPLATE_RULES
 | `skill_narratives.job_outlook` | string | 현재 적합도와 보완 포인트를 바탕으로 한 직무 전망 문단 |
 | `skill_narratives.final_assessment` | string | 점수와 Evidence를 변경하지 않는 최종 평가 문단 |
 
+**Narrative Composer V1 매핑**
+
+`docs/14_NARRATIVE_COMPOSER_ARCHITECTURE.md`의 V1 Composer는 중간 Engine Output을 생성하되,
+새 Report JSON top-level key를 만들지 않는다.
+
+| Composer output | Report JSON 위치 |
+|-----------------|------------------|
+| `executive_summary` | `summary.one_line` 또는 `summary` 내부 narrative 필드 |
+| `strength_narratives` | `skill_explanations[]` 중 `source="strength"` 항목 |
+| `gap_narratives` | `skill_explanations[]` 중 `source="gap"` 항목 |
+| `skill_explanations` | `skill_explanations[]` |
+| `job_outlook` | `skill_narratives.job_outlook` |
+| `final_assessment` | `skill_narratives.final_assessment` |
+
 **Deprecated**
 
 `recommendations`, `roadmap`, `difficulty`, `expected_score_gain`, `time_estimate`는 Day 12 실행 계획 초안의 잔재다.
